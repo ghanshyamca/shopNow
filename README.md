@@ -308,7 +308,7 @@ eksctl version
 
 ```powershell
 # Set your region (change if needed)
-$REGION = "us-east-1"
+$REGION = "ap-south-1"
 
 # Create cluster (this takes ~15-20 minutes)
 eksctl create cluster `
@@ -331,14 +331,9 @@ eksctl create cluster `
 - `--managed`: Uses AWS-managed node groups (easier maintenance)
 
 **Expected Output (this will take ~15 minutes):**
-```
-2026-03-06 10:00:00 [ℹ]  eksctl version 0.167.0
-2026-03-06 10:00:00 [ℹ]  using region us-east-1
-2026-03-06 10:00:01 [ℹ]  setting availability zones to [us-east-1a us-east-1b]
-2026-03-06 10:00:02 [ℹ]  creating EKS cluster "shopnow-eks-cluster" in "us-east-1" region
-...
-2026-03-06 10:15:30 [✔]  EKS cluster "shopnow-eks-cluster" in "us-east-1" region is ready
-```
+<img width="1919" height="1017" alt="image" src="https://github.com/user-attachments/assets/d45fdbb1-9378-461a-b73a-ed7e7cc71ed5" />
+<img width="1723" height="443" alt="image" src="https://github.com/user-attachments/assets/be49d46d-1e60-4dff-a265-eb59121bc47b" />
+<img width="1554" height="79" alt="image" src="https://github.com/user-attachments/assets/06b2838e-df09-445f-ba00-1e17d6839df1" />
 
 **Alternative: Use Existing Cluster**
 
@@ -3242,3 +3237,4 @@ For issues and questions:
 - `<YOUR-BRANCH>`: Your Git branch name
 
 **Happy Deploying! 🚀**
+
