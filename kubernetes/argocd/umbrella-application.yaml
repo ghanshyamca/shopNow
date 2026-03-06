@@ -3,16 +3,30 @@ kind: Application
 metadata:
   name: shopnow-umbrella
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
+  
   source:
-    repoURL: 'https://github.com/aryanm12/shopNow'
-    targetRevision: HEAD
+    repoURL: <YOUR-GIT-REPO-URL>  # Replace with your Git repository URL
+    targetRevision: <YOUR-BRANCH>   # Replace with your branch (e.g., main, master)
     path: kubernetes/argocd/apps
+  
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: https://kubernetes.default.svc
     namespace: argocd
+  
   syncPolicy:
     automated:
-      prune: false
-      selfHeal: false
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

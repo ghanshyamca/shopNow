@@ -1,3 +1,17 @@
-Backend:
-- Service: {{ include "backend.fullname" . }} (type: {{ .Values.service.type }})
-- To access with port-forward: kubectl port-forward svc/{{ include "backend.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+To access your backend service:
+
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "backend.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 5000:5000
+
+Then visit http://127.0.0.1:5000/api/health to test the API.
+
+Backend Configuration:
+  - MongoDB Host: {{ .Values.config.MONGODB_HOST }}
+  - MongoDB Port: {{ .Values.config.MONGODB_PORT }}
+  - Environment: {{ .Values.config.APP_ENV }}
+  - HPA Enabled: {{ .Values.hpa.enabled }}

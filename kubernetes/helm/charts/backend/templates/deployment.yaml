@@ -2,15 +2,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "backend.fullname" . }}
+  labels:
+    {{- include "backend.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "backend.fullname" . }}
+      {{- include "backend.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ include "backend.fullname" . }}
+        {{- include "backend.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: backend
@@ -18,6 +20,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.port }}
+              name: http
           envFrom:
             - configMapRef:
                 name: {{ include "backend.fullname" . }}-config
@@ -25,17 +28,23 @@ spec:
             - secretRef:
                 name: {{ include "backend.fullname" . }}-secret
             {{- end }}
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
+          {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: {{ .Values.livenessProbe.path }}
               port: {{ .Values.service.port }}
-            initialDelaySeconds: 15
-            periodSeconds: 20
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: {{ .Values.readinessProbe.path }}
               port: {{ .Values.service.port }}
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

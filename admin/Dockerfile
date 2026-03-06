@@ -1,37 +1,37 @@
-# admin/Dockerfile
-############################
-# Stage 1: Build
-############################
+# Multi-stage build for React Admin Dashboard
+
+# Stage 1: Build the React application
 FROM node:18-alpine AS builder
+
 WORKDIR /app
 
-RUN apk add --no-cache python3 make g++ || true
-
+# Copy package files
 COPY package*.json ./
-RUN npm ci --no-audit --prefer-offline
 
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
 COPY . .
-# Build argument for dynamic user path
-ARG USER_NAME=aryan
-ENV PUBLIC_URL=/${USER_NAME}-admin
-ENV REACT_APP_API_BASE_URL=/${USER_NAME}-admin/api
+
+# Build the React app
 RUN npm run build
 
-############################
-# Stage 2: Runtime (nginx)
-############################
-FROM nginx:1.24-alpine
+# Stage 2: Serve with nginx
+FROM nginx:1.25-alpine
 
-# Copy admin-specific nginx config included in the admin folder
+# Copy custom nginx configuration
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Copy built static admin app
+# Copy built React app from builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
 
+# Expose port 80
 EXPOSE 80
 
-HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
-  CMD wget -qO- --no-check-certificate http://127.0.0.1/health || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost/health || exit 1
 
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
-

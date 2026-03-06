@@ -1,46 +1,37 @@
-# frontend/Dockerfile
-############################
-# Stage 1: Build the app
-############################
+# Multi-stage build for React Frontend
+
+# Stage 1: Build the React application
 FROM node:18-alpine AS builder
-LABEL org.opencontainers.image.description="shopNow frontend - build stage"
+
 WORKDIR /app
 
-# Install build deps if needed
-RUN apk add --no-cache python3 make g++ || true
-
-# Copy package files (leverage cache)
+# Copy package files
 COPY package*.json ./
-RUN npm ci --no-audit --prefer-offline
 
-# Copy source and build
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
 COPY . .
 
-# Build argument for dynamic user path
-ARG USER_NAME=aryan
-ENV PUBLIC_URL=/${USER_NAME}
-ENV REACT_APP_API_BASE_URL=/${USER_NAME}/api
+# Build the React app
 RUN npm run build
 
-############################
-# Stage 2: Runtime (nginx)
-############################
-FROM nginx:1.24-alpine
-LABEL org.opencontainers.image.maintainer="you@example.com"
+# Stage 2: Serve with nginx
+FROM nginx:1.25-alpine
 
-# Copy nginx config from build context
+# Copy custom nginx configuration
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Copy built static files from builder
+# Copy built React app from builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Expose web port
+# Expose port 80
 EXPOSE 80
 
-# Healthcheck
-HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
-  CMD wget -qO- --no-check-certificate http://127.0.0.1/health || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost/health || exit 1
 
-# Run nginx in foreground
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
-

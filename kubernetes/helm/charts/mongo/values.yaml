@@ -6,32 +6,41 @@ image:
   pullPolicy: IfNotPresent
 
 service:
+  type: ClusterIP
   port: 27017
-  headlessName: mongo-headless
+  headless: true
 
-stateful:
-  volume:
-    storageClassName: gp3-ssd
-    storage: 5Gi
+auth:
+  enabled: true
+  rootUsername: admin
+  rootPassword: ShopNowPass123
+  database: shopnow
+
+persistence:
+  enabled: true
+  storageClass: gp3-ssd
+  accessMode: ReadWriteOnce
+  size: 5Gi
+  retentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Delete
 
 resources:
   requests:
-    cpu: "200m"
-    memory: "256Mi"
+    cpu: "250m"
+    memory: "512Mi"
   limits:
-    cpu: "1"
+    cpu: "1000m"
     memory: "1Gi"
 
 readinessProbe:
+  enabled: true
   initialDelaySeconds: 20
   periodSeconds: 10
   timeoutSeconds: 5
 
-# Demo-only retention policy
-# When this StatefulSet is deleted, PVCs created from volumeClaimTemplates will be deleted.
-# When the StatefulSet is scaled down, PVCs for removed replicas will be deleted.
-persistentVolumeClaimRetentionPolicy:
-  whenDeleted: Delete
-  whenScaled: Delete
-
-terminationGracePeriodSeconds: 30
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 20
+  timeoutSeconds: 5

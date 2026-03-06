@@ -1,38 +1,123 @@
-pipeline {
-  agent any
-  environment {
-    REGISTRY = "your.registry.example.com/shopnow"
-    DOCKER_CREDENTIALS = 'docker-reg-cred'
-    IMAGE_TAG = ''
-  }
-  stages {
-    stage('Checkout') { steps { checkout scm } }
-    stage('Set Image Tag') {
-      steps {
-        script { IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim() }
-        echo "IMAGE_TAG=${IMAGE_TAG}"
-      }
-    }
-    stage('Build & Push') {
-      steps {
-        dir('backend') {
-          withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            sh '''
-              echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin your.registry.example.com
-              docker build -t ${REGISTRY}-backend:${IMAGE_TAG} .
-              docker push ${REGISTRY}-backend:${IMAGE_TAG}
-            '''
-          }
-        }
-      }
-    }
-    stage('Publish Tag') {
-      steps {
-        writeFile file: 'image-tag.txt', text: "${IMAGE_TAG}"
-        archiveArtifacts artifacts: 'image-tag.txt', fingerprint: true
-      }
-    }
-  }
-  post { always { cleanWs() } }
-}
+#!/usr/bin/env groovy
 
+/*
+ * ShopNow Backend - CI Pipeline
+ * Purpose: Build Docker image and push to AWS ECR
+ * Trigger: On commit to backend code
+ */
+
+pipeline {
+    agent any
+    
+    environment {
+        AWS_REGION = '<REGION>'
+        AWS_ACCOUNT_ID = '<ACCOUNT-ID>'
+        ECR_REPOSITORY = 'shopnow/backend'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        DOCKERFILE_PATH = 'backend/Dockerfile'
+        BUILD_CONTEXT = './backend'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '=== Checking out source code ==='
+                checkout scm
+            }
+        }
+        
+        stage('Build Info') {
+            steps {
+                script {
+                    echo "=== Build Information ==="
+                    echo "Build Number: ${env.BUILD_NUMBER}"
+                    echo "Image Tag: ${IMAGE_TAG}"
+                    echo "ECR Repository: ${ECR_REPOSITORY}"
+                    echo "AWS Region: ${AWS_REGION}"
+                }
+            }
+        }
+        
+        stage('Docker Build') {
+            steps {
+                echo '=== Building Docker Image ==='
+                script {
+                    sh """
+                        docker build \
+                            -t ${ECR_REPOSITORY}:${IMAGE_TAG} \
+                            -t ${ECR_REPOSITORY}:latest \
+                            -f ${DOCKERFILE_PATH} \
+                            ${BUILD_CONTEXT}
+                    """
+                }
+            }
+        }
+        
+        stage('AWS ECR Login') {
+            steps {
+                echo '=== Logging into AWS ECR ==='
+                script {
+                    sh """
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS --password-stdin \
+                        ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                    """
+                }
+            }
+        }
+        
+        stage('Tag Image') {
+            steps {
+                echo '=== Tagging Docker Image ==='
+                script {
+                    sh """
+                        docker tag ${ECR_REPOSITORY}:${IMAGE_TAG} \
+                            ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
+                        
+                        docker tag ${ECR_REPOSITORY}:latest \
+                            ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                    """
+                }
+            }
+        }
+        
+        stage('Push to ECR') {
+            steps {
+                echo '=== Pushing to AWS ECR ==='
+                script {
+                    sh """
+                        docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
+                        docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                    """
+                }
+            }
+        }
+        
+        stage('Cleanup') {
+            steps {
+                echo '=== Cleaning up local images ==='
+                script {
+                    sh """
+                        docker rmi ${ECR_REPOSITORY}:${IMAGE_TAG} || true
+                        docker rmi ${ECR_REPOSITORY}:latest || true
+                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG} || true
+                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest || true
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo '=== Backend CI Pipeline Completed Successfully ==='
+            echo "Image pushed: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
+        }
+        failure {
+            echo '=== Backend CI Pipeline Failed ==='
+        }
+        always {
+            echo '=== Pipeline Execution Finished ==='
+        }
+    }
+}

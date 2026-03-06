@@ -3,27 +3,43 @@ kind: Application
 metadata:
   name: mongo
   namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
+  
   source:
-    repoURL: 'https://github.com/aryanm12/shopNow'
-    targetRevision: HEAD
+    repoURL: <YOUR-GIT-REPO-URL>  # Replace with your Git repository URL
+    targetRevision: <YOUR-BRANCH>   # Replace with your branch
     path: kubernetes/helm/charts/mongo
     helm:
-      valueFiles: []
       releaseName: mongo
+      values: |
+        replicaCount: 1
+        persistence:
+          enabled: true
+          size: 5Gi
+  
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: https://kubernetes.default.svc
     namespace: shopnow-demo
+  
   syncPolicy:
     automated:
-      prune: false
-      selfHeal: false
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
     retry:
-      limit: 3
+      limit: 5
       backoff:
-        duration: 10s
+        duration: 5s
         factor: 2
-        maxDuration: 5m
+        maxDuration: 3m
+  
+  # Health check
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/volumeClaimTemplates

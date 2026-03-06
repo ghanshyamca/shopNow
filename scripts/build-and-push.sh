@@ -1,57 +1,156 @@
-#!/usr/bin/bash
-# scripts/build-and-push.sh
-# Usage: ./scripts/build-and-push.sh <registry_prefix> <tag> <username>
-# Example: ./scripts/build-and-push.sh your.registry.example.com/shopnow v1.0 aryan
+#!/bin/bash
 
-set -euo pipefail
+###############################################################################
+# ShopNow - Docker Build and Push Script
+# Purpose: Build all Docker images and push to AWS ECR
+# Usage: ./build-and-push.sh [component] [tag]
+#   component: backend|frontend|admin|all (default: all)
+#   tag: image tag (default: latest)
+###############################################################################
 
-# Check if all required parameters are provided
-if [ $# -ne 3 ]; then
-    echo "Error: All parameters are required!"
-    echo "Usage: $0 <registry_prefix> <tag> <username>"
-    echo "Example: $0 123456789012.dkr.ecr.us-east-1.amazonaws.com/shopnow v1.0 aryan"
-    echo ""
-    echo "Parameters:"
-    echo "  registry_prefix: Your container registry URL (e.g., ECR, Docker Hub)"
-    echo "  tag: Version tag for the images (e.g., v1.0, latest, dev)"
-    echo "  username: Username for the learner (e.g., aryan, john, sarah)"
-    exit 1
-fi
+set -e  # Exit on any error
 
-REGISTRY=$1
-TAG=$2
-USER_NAME=$3
-DOCKER_OPTS=${DOCKER_OPTS:-}
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-echo "Building images for user: $USER_NAME"
-echo "Registry: $REGISTRY"
-echo "Tag: $TAG"
-echo ""
+# Configuration - REPLACE THESE
+AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-<ACCOUNT-ID>}"
+ECR_BASE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/shopnow"
 
-build_and_push() {
-  local dir=$1
-  local name=$2
-  local build_args=$3
-  echo "-> Building ${name} from ${dir}"
-  docker build ${DOCKER_OPTS} ${build_args} -t "${REGISTRY}/${name}:${TAG}" "${dir}"
-  echo "-> Pushing ${REGISTRY}/${name}:${TAG}"
-  docker push "${REGISTRY}/${name}:${TAG}"
-  echo
+# Parse arguments
+COMPONENT="${1:-all}"
+TAG="${2:-latest}"
+
+###############################################################################
+# Helper Functions
+###############################################################################
+
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
 }
 
-# Validate docker available
-if ! command -v docker >/dev/null 2>&1; then
-  echo "ERROR: docker not found in PATH"
-  exit 2
-fi
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
 
-# Build components
-build_and_push "./frontend" "frontend" "--build-arg USER_NAME=${USER_NAME}"
-build_and_push "./backend" "backend" ""
-build_and_push "./admin" "admin" "--build-arg USER_NAME=${USER_NAME}"
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
 
-echo "All images built and pushed:"
-echo "  ${REGISTRY}/frontend:${TAG} (for user: ${USER_NAME})"
-echo "  ${REGISTRY}/backend:${TAG}"
-echo "  ${REGISTRY}/admin:${TAG} (for user: ${USER_NAME}-admin)"
+check_prerequisites() {
+    log_info "Checking prerequisites..."
+    
+    if ! command -v docker &> /dev/null; then
+        log_error "Docker is not installed"
+        exit 1
+    fi
+    
+    if ! command -v aws &> /dev/null; then
+        log_error "AWS CLI is not installed"
+        exit 1
+    fi
+    
+    if [ "${AWS_ACCOUNT_ID}" == "<ACCOUNT-ID>" ]; then
+        log_error "Please configure AWS_ACCOUNT_ID in the script or environment"
+        exit 1
+    fi
+    
+    log_info "Prerequisites check passed"
+}
 
+ecr_login() {
+    log_info "Logging into AWS ECR..."
+    aws ecr get-login-password --region ${AWS_REGION} | \
+        docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+    log_info "ECR login successful"
+}
+
+build_and_push() {
+    local component=$1
+    local context_dir="./${component}"
+    local dockerfile="${context_dir}/Dockerfile"
+    local repo="${ECR_BASE}/${component}"
+    
+    log_info "=========================================="
+    log_info "Building ${component}"
+    log_info "=========================================="
+    
+    if [ ! -f "${dockerfile}" ]; then
+        log_error "Dockerfile not found: ${dockerfile}"
+        return 1
+    fi
+    
+    # Build
+    log_info "Building image: ${repo}:${TAG}"
+    docker build \
+        -t ${repo}:${TAG} \
+        -t ${repo}:latest \
+        -f ${dockerfile} \
+        ${context_dir}
+    
+    # Push
+    log_info "Pushing image: ${repo}:${TAG}"
+    docker push ${repo}:${TAG}
+    docker push ${repo}:latest
+    
+    log_info "✓ ${component} build and push completed"
+}
+
+###############################################################################
+# Main Execution
+###############################################################################
+
+main() {
+    log_info "ShopNow Docker Build and Push Script"
+    log_info "Component: ${COMPONENT}"
+    log_info "Tag: ${TAG}"
+    log_info "ECR Base: ${ECR_BASE}"
+    
+    check_prerequisites
+    ecr_login
+    
+    case ${COMPONENT} in
+        backend)
+            build_and_push "backend"
+            ;;
+        frontend)
+            build_and_push "frontend"
+            ;;
+        admin)
+            build_and_push "admin"
+            ;;
+        all)
+            build_and_push "backend"
+            build_and_push "frontend"
+            build_and_push "admin"
+            ;;
+        *)
+            log_error "Invalid component: ${COMPONENT}"
+            log_info "Usage: $0 [backend|frontend|admin|all] [tag]"
+            exit 1
+            ;;
+    esac
+    
+    log_info "=========================================="
+    log_info "✓ All builds completed successfully!"
+    log_info "=========================================="
+    
+    # Display pushed images
+    log_info "Pushed images:"
+    case ${COMPONENT} in
+        all)
+            echo "  - ${ECR_BASE}/backend:${TAG}"
+            echo "  - ${ECR_BASE}/frontend:${TAG}"
+            echo "  - ${ECR_BASE}/admin:${TAG}"
+            ;;
+        *)
+            echo "  - ${ECR_BASE}/${COMPONENT}:${TAG}"
+            ;;
+    esac
+}
+
+main "$@"

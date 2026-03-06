@@ -1,32 +1,167 @@
-pipeline {
-  agent any
-  parameters {
-    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Image tag to deploy')
-  }
-  environment {
-    REGISTRY = "your.registry.example.com/shopnow"
-    KUBECONFIG_FILE = 'kubeconfig-credential' // Jenkins file credential containing kubeconfig
-    RELEASE_NAME = 'shopnow-frontend'
-    NAMESPACE = 'shopnow-demo'
-    CHART_PATH = 'charts/frontend'
-  }
-  stages {
-    stage('Checkout') { steps { checkout scm } }
-    stage('Deploy (Helm)') {
-      steps {
-        withCredentials([file(credentialsId: KUBECONFIG_FILE, variable: 'KUBECONFIG')]) {
-          sh '''
-            export KUBECONFIG=$KUBECONFIG
-            helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} \
-              --namespace ${NAMESPACE} --create-namespace \
-              --set image.repository=${REGISTRY}-frontend \
-              --set image.tag=${IMAGE_TAG} \
-              --wait --timeout 5m
-            kubectl rollout status deployment/${RELEASE_NAME}-frontend -n ${NAMESPACE} --timeout=3m
-          '''
-        }
-      }
-    }
-  }
-}
+#!/usr/bin/env groovy
 
+/*
+ * ShopNow Frontend - CD Pipeline
+ * Purpose: Deploy frontend to Kubernetes using HELM
+ * Trigger: Manual or after CI pipeline success
+ */
+
+pipeline {
+    agent any
+    
+    environment {
+        AWS_REGION = '<REGION>'
+        CLUSTER_NAME = 'shopnow-eks-cluster'
+        NAMESPACE = 'shopnow-demo'
+        CHART_PATH = './kubernetes/helm/charts/frontend'
+        RELEASE_NAME = 'frontend'
+        IMAGE_TAG = "${params.IMAGE_TAG ?: 'latest'}"
+    }
+    
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to deploy')
+        booleanParam(name: 'DRY_RUN', defaultValue: false, description: 'Run helm in dry-run mode')
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '=== Checking out source code ==='
+                checkout scm
+            }
+        }
+        
+        stage('Setup kubectl') {
+            steps {
+                echo '=== Configuring kubectl for EKS ==='
+                script {
+                    sh """
+                        aws eks update-kubeconfig \
+                            --region ${AWS_REGION} \
+                            --name ${CLUSTER_NAME}
+                    """
+                }
+            }
+        }
+        
+        stage('Verify Cluster Access') {
+            steps {
+                echo '=== Verifying cluster connectivity ==='
+                script {
+                    sh """
+                        kubectl cluster-info
+                        kubectl get nodes
+                    """
+                }
+            }
+        }
+        
+        stage('Check Namespace') {
+            steps {
+                echo '=== Checking if namespace exists ==='
+                script {
+                    def namespaceExists = sh(
+                        script: "kubectl get namespace ${NAMESPACE}",
+                        returnStatus: true
+                    ) == 0
+                    
+                    if (!namespaceExists) {
+                        echo "Namespace ${NAMESPACE} not found. Creating..."
+                        sh "kubectl create namespace ${NAMESPACE}"
+                    } else {
+                        echo "Namespace ${NAMESPACE} already exists"
+                    }
+                }
+            }
+        }
+        
+        stage('HELM Lint') {
+            steps {
+                echo '=== Linting HELM chart ==='
+                script {
+                    sh "helm lint ${CHART_PATH}"
+                }
+            }
+        }
+        
+        stage('Deploy with HELM') {
+            steps {
+                echo '=== Deploying Frontend with HELM ==='
+                script {
+                    def dryRunFlag = params.DRY_RUN ? '--dry-run' : ''
+                    
+                    sh """
+                        helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} \
+                            --namespace ${NAMESPACE} \
+                            --set image.tag=${IMAGE_TAG} \
+                            --create-namespace \
+                            --wait \
+                            --timeout 5m \
+                            ${dryRunFlag}
+                    """
+                }
+            }
+        }
+        
+        stage('Verify Deployment') {
+            when {
+                expression { !params.DRY_RUN }
+            }
+            steps {
+                echo '=== Verifying deployment status ==='
+                script {
+                    sh """
+                        echo "Checking pods..."
+                        kubectl get pods -n ${NAMESPACE} -l app.kubernetes.io/name=frontend
+                        
+                        echo "\nChecking deployment..."
+                        kubectl rollout status deployment/${RELEASE_NAME} -n ${NAMESPACE} --timeout=5m
+                        
+                        echo "\nChecking service..."
+                        kubectl get svc -n ${NAMESPACE} -l app.kubernetes.io/name=frontend
+                    """
+                }
+            }
+        }
+        
+        stage('Show Resources') {
+            when {
+                expression { !params.DRY_RUN }
+            }
+            steps {
+                echo '=== Displaying deployed resources ==='
+                script {
+                    sh """
+                        echo "=== HELM Release Info ==="
+                        helm list -n ${NAMESPACE}
+                        
+                        echo "\n=== Frontend Deployment ==="
+                        kubectl describe deployment/${RELEASE_NAME} -n ${NAMESPACE}
+                        
+                        echo "\n=== Frontend Pods ==="
+                        kubectl get pods -n ${NAMESPACE} -l app.kubernetes.io/name=frontend -o wide
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo '=== Frontend CD Pipeline Completed Successfully ==='
+            echo "Frontend deployed with image tag: ${IMAGE_TAG}"
+        }
+        failure {
+            echo '=== Frontend CD Pipeline Failed ==='
+            script {
+                sh """
+                    echo "Recent events in namespace:"
+                    kubectl get events -n ${NAMESPACE} --sort-by='.lastTimestamp' | tail -20
+                """
+            }
+        }
+        always {
+            echo '=== Pipeline Execution Finished ==='
+        }
+    }
+}

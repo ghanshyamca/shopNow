@@ -6,11 +6,12 @@ metadata:
   labels:
     app: mongo
 spec:
-  clusterIP: None
+  type: ClusterIP
+  clusterIP: None  # Headless service
+  ports:
+  - port: 27017
+    targetPort: 27017
+    protocol: TCP
+    name: mongo
   selector:
     app: mongo
-  ports:
-  - name: mongo
-    port: 27017
-    targetPort: 27017
-

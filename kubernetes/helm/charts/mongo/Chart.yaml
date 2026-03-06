@@ -1,6 +1,12 @@
 apiVersion: v2
 name: mongo
-description: MongoDB chart (Deployment or StatefulSet)
+description: MongoDB StatefulSet for ShopNow application
 type: application
 version: 0.1.0
 appVersion: "6.0"
+keywords:
+  - mongodb
+  - database
+  - statefulset
+maintainers:
+  - name: ShopNow Team

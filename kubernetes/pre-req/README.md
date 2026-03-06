@@ -1,39 +1,58 @@
-# 🔧 Kubernetes Prerequisites
+# Prerequisites
 
-This directory contains essential cluster components needed before deploying the ShopNow application.
+This directory contains prerequisite resources that need to be installed once per Kubernetes cluster.
 
-## Required Components
+## Files
 
-### 1. Metrics Server
+### 1. metrics-server.yaml
+Metrics Server is required for:
+- Horizontal Pod Autoscaler (HPA) to work
+- `kubectl top nodes` and `kubectl top pods` commands
+- Resource monitoring and metrics collection
+
+**Install:**
 ```bash
 kubectl apply -f metrics-server.yaml
 ```
-Enables resource metrics collection for HPA (Horizontal Pod Autoscaler).
 
-### 2. Ingress Controller (NGINX)
+**Verify:**
 ```bash
-# For cloud providers
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
-
-# For local development (minikube/kind)
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/kind/deploy.yaml
+kubectl get deployment metrics-server -n kube-system
+kubectl top nodes
 ```
 
-### 3. Storage Class (GP3)
+### 2. storageclass-gp3.yaml
+AWS EBS gp3 StorageClass for persistent volumes.
+
+**Requirements:**
+- AWS EKS cluster
+- EBS CSI Driver installed (via EKS Add-on)
+
+**Install:**
 ```bash
 kubectl apply -f storageclass-gp3.yaml
 ```
-Provides high-performance GP3 storage class for persistent volumes.
 
-## Verification Commands
+**Verify:**
 ```bash
-# Check metrics server
-kubectl top nodes
-kubectl top pods -A
-
-# Check ingress controller
-kubectl get pods -n ingress-nginx
-
-# Check storage class
-kubectl get storageclass
+kubectl get storageclass gp3-ssd
 ```
+
+## Installation Order
+
+1. First install the EBS CSI Driver (for AWS EKS):
+   - Go to EKS Console → Your Cluster → Add-ons
+   - Install "Amazon EBS CSI Driver"
+   - Create IAM role with Pod Identity
+
+2. Then apply these prerequisites:
+```bash
+kubectl apply -f metrics-server.yaml
+kubectl apply -f storageclass-gp3.yaml
+```
+
+## Notes
+
+- These resources only need to be installed once per cluster
+- All other namespaced resources will use these
+- For non-AWS clusters, use appropriate storage class for your provider

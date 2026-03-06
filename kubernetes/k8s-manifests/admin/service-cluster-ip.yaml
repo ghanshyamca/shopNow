@@ -3,11 +3,14 @@ kind: Service
 metadata:
   name: admin
   namespace: shopnow-demo
+  labels:
+    app: admin
 spec:
   type: ClusterIP
-  selector:
-    app: admin
   ports:
   - port: 80
     targetPort: 80
-
+    protocol: TCP
+    name: http
+  selector:
+    app: admin

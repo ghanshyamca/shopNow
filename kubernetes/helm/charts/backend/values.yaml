@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: 975050024946.dkr.ecr.ap-southeast-1.amazonaws.com/shopnow/backend
+  repository: <ACCOUNT-ID>.dkr.ecr.<REGION>.amazonaws.com/shopnow/backend
   tag: latest
   pullPolicy: IfNotPresent
 
@@ -10,13 +10,17 @@ service:
   port: 5000
 
 config:
-  MONGODB_HOST: mongo
+  MONGODB_HOST: mongo-headless
   MONGODB_PORT: "27017"
   APP_ENV: "k8s-demo"
+  PORT: "5000"
+  NODE_ENV: "production"
 
 secret:
   enabled: true
-  MONGODB_URI: mongodb://shopuser:ShopNowPass123@mongo-0.mongo-headless.shopnow-demo.svc.cluster.local:27017/shopnow?authSource=admin
+  MONGODB_URI: mongodb://admin:ShopNowPass123@mongo-headless:27017/shopnow?authSource=admin
+  MONGODB_USERNAME: admin
+  MONGODB_PASSWORD: ShopNowPass123
 
 resources:
   requests:
@@ -25,6 +29,20 @@ resources:
   limits:
     cpu: "500m"
     memory: "512Mi"
+
+livenessProbe:
+  enabled: true
+  path: /api/health
+  initialDelaySeconds: 15
+  periodSeconds: 20
+  timeoutSeconds: 5
+
+readinessProbe:
+  enabled: true
+  path: /api/health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
 
 hpa:
   enabled: true

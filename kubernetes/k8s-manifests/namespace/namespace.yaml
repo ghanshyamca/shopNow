@@ -3,4 +3,5 @@ kind: Namespace
 metadata:
   name: shopnow-demo
   labels:
-    app: shopnow
+    name: shopnow-demo
+    environment: demo

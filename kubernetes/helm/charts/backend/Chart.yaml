@@ -1,6 +1,13 @@
 apiVersion: v2
 name: backend
-description: shopNow backend API
+description: ShopNow Backend API (Node.js + Express)
 type: application
 version: 0.1.0
 appVersion: "1.0"
+keywords:
+  - nodejs
+  - express
+  - api
+  - backend
+maintainers:
+  - name: ShopNow Team
