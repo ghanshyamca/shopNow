@@ -742,6 +742,11 @@ docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/shopnow/frontend:
 Write-Host "✅ Frontend image pushed successfully!" -ForegroundColor Green
 ```
 
+**Excepted Output**
+<img width="1919" height="1006" alt="image" src="https://github.com/user-attachments/assets/d6a6f388-1bf4-49d7-86c3-1b817f37a5de" />
+<img width="1913" height="809" alt="image" src="https://github.com/user-attachments/assets/9d26c269-2619-4d49-aa61-dd1e95e85f3d" />
+
+
 **Build Admin Image:**
 ```powershell
 Write-Host "Building Admin Image..." -ForegroundColor Yellow
@@ -757,6 +762,9 @@ docker push "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/shopnow/admin:lat
 
 Write-Host "✅ Admin image pushed successfully!" -ForegroundColor Green
 ```
+**Excepted Output**
+<img width="1631" height="584" alt="image" src="https://github.com/user-attachments/assets/1e460c3c-caa4-4284-aba8-986ed62e133f" />
+<img width="1712" height="313" alt="image" src="https://github.com/user-attachments/assets/8b105648-192c-4048-bf66-c8abc576dde5" />
 
 #### 5.3: Using Automated Script (Option B - Faster)
 
@@ -808,20 +816,9 @@ aws ecr describe-images --repository-name shopnow/admin --region $AWS_REGION
 ```
 
 **Expected Output (per repository):**
-```json
-{
-    "imageDetails": [
-        {
-            "registryId": "123456789012",
-            "repositoryName": "shopnow/backend",
-            "imageDigest": "sha256:abc123...",
-            "imageTags": ["latest"],
-            "imageSizeInBytes": 89456789,
-            "imagePushedAt": "2026-03-06T11:00:00+00:00"
-        }
-    ]
-}
-```
+<img width="1919" height="1007" alt="image" src="https://github.com/user-attachments/assets/12c1dc5c-2faf-42c0-b77e-429be6785aaa" />
+<img width="1919" height="1007" alt="image" src="https://github.com/user-attachments/assets/97e011e8-eb99-495a-8adf-0d111b40cea9" />
+<img width="1919" height="750" alt="image" src="https://github.com/user-attachments/assets/25bee06f-29b3-412e-bae5-985e29f73a79" />
 
 **Quick Verification:**
 ```powershell
@@ -833,6 +830,10 @@ aws ecr describe-repositories --region $AWS_REGION --query 'repositories[?contai
 - ✅ shopnow/backend (tag: latest)
 - ✅ shopnow/frontend (tag: latest)
 - ✅ shopnow/admin (tag: latest)
+
+**ScreenShot**
+<img width="1914" height="241" alt="image" src="https://github.com/user-attachments/assets/d662f992-f135-428e-a00e-0611ebcac56f" />
+
 
 #### 5.5: View Image Sizes
 
@@ -893,12 +894,8 @@ kubectl get namespace shopnow-demo
 ```
 
 **Expected Output:**
-```
-namespace/shopnow-demo created
+<img width="1261" height="143" alt="image" src="https://github.com/user-attachments/assets/294f46ec-ffb5-4cb6-8915-038f2dcd7faf" />
 
-NAME           STATUS   AGE
-shopnow-demo   Active   2s
-```
 
 **What This Does:**
 - Creates isolated workspace called "shopnow-demo"
@@ -916,12 +913,8 @@ kubectl get storageclass gp3-ssd
 ```
 
 **Expected Output:**
-```
-storageclass.storage.k8s.io/gp3-ssd created
+<img width="1123" height="138" alt="image" src="https://github.com/user-attachments/assets/2b47c1a4-18be-489a-a59c-1e39cb90a986" />
 
-NAME      PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      AGE
-gp3-ssd   ebs.csi.aws.com         Delete          WaitForFirstConsumer   3s
-```
 
 **What This Does:**
 - Configures AWS EBS gp3 SSD volumes (faster than gp2)
@@ -943,16 +936,8 @@ kubectl top nodes
 ```
 
 **Expected Output:**
-```
-deployment.apps/metrics-server created
-service/metrics-server created
+<img width="1658" height="447" alt="image" src="https://github.com/user-attachments/assets/e2e27941-2c52-4da2-853d-a52ca87ef926" />
 
-pod/metrics-server-xxxxx condition met
-
-NAME                              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
-ip-192-168-10-20.ec2.internal     150m         7%     1200Mi          30%
-ip-192-168-20-30.ec2.internal     200m         10%    1500Mi          37%
-```
 
 **What This Does:**
 - Collects CPU/memory metrics from nodes and pods
@@ -960,6 +945,25 @@ ip-192-168-20-30.ec2.internal     200m         10%    1500Mi          37%
 - Enables `kubectl top` commands
 
 ---
+
+# Delete the EKS addon version
+aws eks delete-addon `
+  --cluster-name $CLUSTER_NAME `
+  --addon-name aws-ebs-csi-driver `
+  --region $AWS_REGION
+
+Start-Sleep -Seconds 30
+
+# Install using kubectl (more reliable)
+kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.25"
+
+# Verify installation
+kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-ebs-csi-driver
+
+<img width="1907" height="924" alt="image" src="https://github.com/user-attachments/assets/c34e9b99-b564-45da-acb2-14aa7e5287b4" />
+<img width="1793" height="929" alt="image" src="https://github.com/user-attachments/assets/0bbe80ae-34c1-4e18-ac7f-fe5e6d81ccd7" />
+
+
 
 **6.2: Deploy MongoDB (Database Layer)**
 
@@ -981,24 +985,9 @@ kubectl get svc -n shopnow-demo -l app.kubernetes.io/name=mongo
 ```
 
 **Expected Output:**
-```
-NAME: mongo
-LAST DEPLOYED: Thu Mar  6 11:15:00 2026
-NAMESPACE: shopnow-demo
-STATUS: deployed
-REVISION: 1
+<img width="1538" height="160" alt="image" src="https://github.com/user-attachments/assets/6602921f-1a68-4e90-881c-2f187bc68a31" />
+<img width="1860" height="384" alt="image" src="https://github.com/user-attachments/assets/1a9fc8c5-2403-419e-b082-1fbfd4048a56" />
 
-pod/mongo-0 condition met
-
-NAME      READY   STATUS    RESTARTS   AGE
-mongo-0   1/1     Running   0          2m30s
-
-NAME                            STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-data-mongo-0                    Bound    pvc-abc-123                                5Gi        RWO            gp3-ssd        2m30s
-
-NAME    TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)     AGE
-mongo   ClusterIP   None         <none>        27017/TCP   2m30s
-```
 
 **What This Shows:**
 - ✅ Pod `mongo-0` is Running (1/1 ready)
@@ -1011,10 +1000,8 @@ kubectl logs -f mongo-0 -n shopnow-demo --tail=20
 ```
 
 **Expected in logs:**
-```
-Waiting for connections on port 27017
-{"t":{"$date":"..."},"s":"I", "c":"NETWORK", "msg":"Listening on", "attr":{"address":"0.0.0.0"}}
-```
+<img width="1913" height="756" alt="image" src="https://github.com/user-attachments/assets/5d5e92ee-b3a8-472d-babd-00540c33f1dc" />
+
 
 ---
 
@@ -1058,6 +1045,12 @@ Server is running on port 5000
 Connected to MongoDB successfully
 Ready to accept requests
 ```
+<img width="1905" height="623" alt="image" src="https://github.com/user-attachments/assets/47a02a5f-7311-4806-9df3-883fd7751d29" />
+<img width="1874" height="77" alt="image" src="https://github.com/user-attachments/assets/cd2e0bb6-f6a4-4d2a-91be-cbabea6a4590" />
+<img width="1476" height="99" alt="image" src="https://github.com/user-attachments/assets/13493665-c7cc-4f99-9a35-b1037a309a3f" />
+<img width="1736" height="101" alt="image" src="https://github.com/user-attachments/assets/ae1e7af9-5a30-4cca-9db5-dd5ebae557a7" />
+<img width="1644" height="174" alt="image" src="https://github.com/user-attachments/assets/2ed21374-0687-49c7-845f-f57184b9bc1b" />
+
 
 **What This Shows:**
 - ✅ Backend pod running
@@ -1081,6 +1074,7 @@ Stop-Job -Name Job1
 ```json
 {"status":"ok","database":"connected"}
 ```
+<img width="1910" height="768" alt="image" src="https://github.com/user-attachments/assets/6b8c7c0c-0c17-44fd-b44d-ca850a9ee127" />
 
 ---
 
@@ -1113,6 +1107,9 @@ frontend-xxxxxxxxxx-xxxxx  1/1     Running   0          30s
 NAME       TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
 frontend   ClusterIP   10.100.234.56   <none>        80/TCP    30s
 ```
+<img width="1698" height="212" alt="image" src="https://github.com/user-attachments/assets/06d5d5a1-a2e4-4aec-9b1b-38df2534ba3a" />
+<img width="1913" height="95" alt="image" src="https://github.com/user-attachments/assets/d301756e-cbd2-4837-bae7-a12bfee6a2fe" />
+<img width="1848" height="219" alt="image" src="https://github.com/user-attachments/assets/4a44d369-a533-4b9f-91a1-6edf8a80ce40" />
 
 ---
 
@@ -1145,6 +1142,7 @@ admin-xxxxxxxxxx-xxxxx  1/1     Running   0          30s
 NAME    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
 admin   ClusterIP   10.100.345.67   <none>        80/TCP    30s
 ```
+<img width="1915" height="451" alt="image" src="https://github.com/user-attachments/assets/e0d47b51-2c7e-4c39-afe6-4ff3b3ee16ee" />
 
 ---
 
@@ -1189,6 +1187,9 @@ ingress-nginx-controller-xxxxx       1/1     Running   2m
 NAME                                 TYPE           EXTERNAL-IP                                                              PORT(S)
 ingress-nginx-controller             LoadBalancer   a1b2c3-123456789.us-east-1.elb.amazonaws.com                            80:31234/TCP,443:31235/TCP
 ```
+<img width="1918" height="1017" alt="image" src="https://github.com/user-attachments/assets/6eba51d0-fe0a-4934-886f-94d39d8262ae" />
+<img width="1903" height="436" alt="image" src="https://github.com/user-attachments/assets/8191ea98-1ba8-4144-b125-9e5951c606ce" />
+
 
 **Important**: Note the EXTERNAL-IP (AWS LoadBalancer DNS) - you'll use this to access your application!
 
@@ -1223,59 +1224,16 @@ Rules:
                          /api           backend:5000 (10.0.1.7:5000)
 ```
 
+<img width="1774" height="686" alt="image" src="https://github.com/user-attachments/assets/f4266b50-a3f0-41b8-a8a0-b8220d7be8a4" />
+
+
 **What This Shows:**
 - ✅ Ingress routes configured:
-  - `/` → Frontend
-  - `/admin` → Admin Dashboard
-  - `/api` → Backend API
+  - `/ghanshyam` → Frontend
+  - `/ghanshyam-admin` → Admin Dashboard
+  - `/ghanshyam/api` → Backend API
 
 ---
-
-#### Option B: Using Raw Kubernetes Manifests
-
-**If you prefer not to use HELM:**
-
-```powershell
-Write-Host "Deploying with raw Kubernetes manifests..." -ForegroundColor Yellow
-
-# Deploy in order (sequence matters!)
-kubectl apply -f kubernetes/k8s-manifests/namespace/
-kubectl apply -f kubernetes/pre-req/
-
-Write-Host "Waiting for metrics server..." -ForegroundColor Cyan
-kubectl wait --for=condition=ready pod -l k8s-app=metrics-server -n kube-system --timeout=120s
-
-kubectl apply -f kubernetes/k8s-manifests/database/
-Write-Host "Waiting for MongoDB..." -ForegroundColor Cyan
-kubectl wait --for=condition=ready pod -l app=mongo -n shopnow-demo --timeout=300s
-
-kubectl apply -f kubernetes/k8s-manifests/backend/
-Write-Host "Waiting for Backend..." -ForegroundColor Cyan
-kubectl wait --for=condition=ready pod -l app=backend -n shopnow-demo --timeout=180s
-
-kubectl apply -f kubernetes/k8s-manifests/frontend/
-kubectl apply -f kubernetes/k8s-manifests/admin/
-Write-Host "Waiting for Frontend and Admin..." -ForegroundColor Cyan
-Start-Sleep -Seconds 30
-
-kubectl apply -f kubernetes/k8s-manifests/ingress/
-
-Write-Host "`n✅ All resources deployed!" -ForegroundColor Green
-```
-
-**Verify all pods are running:**
-```powershell
-kubectl get pods -n shopnow-demo
-```
-
-**Expected:**
-```
-NAME                       READY   STATUS    RESTARTS   AGE
-mongo-0                    1/1     Running   0          5m
-backend-xxxxxxxxxx-xxxxx   1/1     Running   0          3m
-frontend-xxxxxxxxxx-xxxxx  1/1     Running   0          2m
-admin-xxxxxxxxxx-xxxxx     1/1     Running   0          2m
-```
 
 ### Step 7: Verify Deployment
 
@@ -1317,6 +1275,8 @@ replicaset.apps/frontend-xxx          1         1         1       5m
 NAME                     READY   AGE
 statefulset.apps/mongo   1/1     10m
 ```
+<img width="1913" height="703" alt="image" src="https://github.com/user-attachments/assets/af0db0bf-440c-46e6-9400-0e6282e9cf44" />
+
 
 **Health Check Indicators:**
 - ✅ All pods show `1/1 READY`
@@ -1339,6 +1299,8 @@ backend-xxx    1/1     Running   0          8m    10.0.1.15   ip-192-168-10-20
 frontend-xxx   1/1     Running   0          5m    10.0.2.20   ip-192-168-20-30
 mongo-0        1/1     Running   0          10m   10.0.1.5    ip-192-168-10-20
 ```
+<img width="1911" height="214" alt="image" src="https://github.com/user-attachments/assets/3fd79ebd-1f60-411e-a564-fd4b31911ddf" />
+
 
 **What to Verify:**
 - Each pod has an internal IP address
@@ -1360,6 +1322,7 @@ backend    ClusterIP   10.100.100.100   <none>        5000/TCP    8m
 frontend   ClusterIP   10.100.150.75    <none>        80/TCP      5m
 mongo      ClusterIP   None             <none>        27017/TCP   10m
 ```
+<img width="1555" height="180" alt="image" src="https://github.com/user-attachments/assets/8cc23052-6d0f-4bc6-b07c-0e196990a963" />
 
 **Service Types:**
 - **ClusterIP (frontend, backend, admin)**: Internal access only (via Ingress)
@@ -1377,6 +1340,7 @@ kubectl get ingress -n shopnow-demo
 NAME              CLASS   HOSTS                   ADDRESS                                          PORTS   AGE
 shopnow-ingress   nginx   shopnow.john-doe.com    a1b2c3-123.us-east-1.elb.amazonaws.com          80      3m
 ```
+<img width="1807" height="88" alt="image" src="https://github.com/user-attachments/assets/92689df1-195d-4ce1-a4b6-6f11bd8ce60b" />
 
 **Detailed Ingress Info:**
 ```powershell
@@ -1403,6 +1367,7 @@ Events:
   ----    ------  -------
   Normal  Sync    Scheduled for sync
 ```
+<img width="1866" height="465" alt="image" src="https://github.com/user-attachments/assets/09876d39-c396-4e8b-8229-daa9ed0da246" />
 
 **Important**: Copy the ADDRESS (AWS LoadBalancer URL) - you'll use this to access the app!
 
@@ -1420,6 +1385,7 @@ admin      Deployment/admin      15%/80%   1         3         1          5m
 backend    Deployment/backend    20%/80%   1         3         1          8m
 frontend   Deployment/frontend   10%/80%   1         3         1          5m
 ```
+<img width="1374" height="147" alt="image" src="https://github.com/user-attachments/assets/540a01a5-7718-4879-bab8-51eb75edf805" />
 
 **What This Shows:**
 - **TARGETS**: Current CPU usage / Target threshold
@@ -1444,6 +1410,7 @@ persistentvolume/pvc-abc-123               5Gi        RWO            Delete     
 NAME                                STATUS   VOLUME        CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 persistentvolumeclaim/data-mongo-0  Bound    pvc-abc-123   5Gi        RWO            gp3-ssd        10m
 ```
+<img width="1909" height="296" alt="image" src="https://github.com/user-attachments/assets/82ee3260-2b1f-41b8-9d9e-ff5fb38e822e" />
 
 **What This Shows:**
 - ✅ PVC `data-mongo-0` is Bound to a PV
@@ -1463,6 +1430,8 @@ kubectl logs -n shopnow-demo mongo-0 --tail=20
 Waiting for connections on port 27017
 {"t":{"$date":"..."},"s":"I", "c":"NETWORK", "msg":"Listening on", "attr":{"address":"0.0.0.0"}}
 ```
+<img width="1905" height="512" alt="image" src="https://github.com/user-attachments/assets/86b0fd7e-c2ad-40e3-957e-50e8b642627b" />
+
 
 **Backend Logs:**
 ```powershell
@@ -1477,6 +1446,8 @@ Connected to MongoDB: mongodb://mongo:27017/shopnow
 Database connection established
 Express app listening on port 5000
 ```
+<img width="1591" height="169" alt="image" src="https://github.com/user-attachments/assets/b11c8e76-21ed-4795-b21d-4ee376e82863" />
+
 
 **Frontend Logs:**
 ```powershell
@@ -1488,6 +1459,7 @@ kubectl logs -n shopnow-demo -l app.kubernetes.io/name=frontend --tail=20
 ```
 /docker-entrypoint.sh: Configuration complete; ready for start up
 ```
+<img width="1468" height="482" alt="image" src="https://github.com/user-attachments/assets/52f6efb2-29cb-46b9-b2de-371c163cf014" />
 
 #### 7.8: Check Events (Troubleshooting)
 
@@ -1504,6 +1476,8 @@ LAST SEEN   TYPE     REASON              OBJECT                  MESSAGE
 2m          Normal   Created             pod/backend-xxx         Created container
 2m          Normal   Started             pod/backend-xxx         Started container
 ```
+<img width="1908" height="728" alt="image" src="https://github.com/user-attachments/assets/53e1c0ed-c246-4af3-b00d-c22e2c0287c9" />
+
 
 **Warning Signs (if you see these, there's an issue):**
 - `FailedScheduling`: Insufficient resources
@@ -1541,6 +1515,8 @@ Running Pods: 4
 ✅ ALL SYSTEMS OPERATIONAL!
 Your application is ready to use.
 ```
+<img width="1908" height="409" alt="image" src="https://github.com/user-attachments/assets/37b2a79b-a216-4269-8831-be6de068c9fc" />
+
 
 ### Step 8: Access the Application
 
@@ -1556,8 +1532,8 @@ $INGRESS_ADDRESS = kubectl get ingress shopnow-ingress -n shopnow-demo -o jsonpa
 Write-Host "LoadBalancer URL: $INGRESS_ADDRESS" -ForegroundColor Green
 Write-Host "`nAccess your application at:" -ForegroundColor Cyan
 Write-Host "  Frontend:  http://$INGRESS_ADDRESS" -ForegroundColor Yellow
-Write-Host "  Admin:     http://$INGRESS_ADDRESS/admin" -ForegroundColor Yellow
-Write-Host "  API:       http://$INGRESS_ADDRESS/api/health" -ForegroundColor Yellow
+Write-Host "  Admin:     http://$INGRESS_ADDRESS/ghanshyam-admin" -ForegroundColor Yellow
+Write-Host "  API:       http://$INGRESS_ADDRESS/ghanshyam/api/" -ForegroundColor Yellow
 ```
 
 **Expected Output:**
@@ -1566,24 +1542,24 @@ LoadBalancer URL: a1b2c3-123456789.us-east-1.elb.amazonaws.com
 
 Access your application at:
   Frontend:  http://a1b2c3-123456789.us-east-1.elb.amazonaws.com
-  Admin:     http://a1b2c3-123456789.us-east-1.elb.amazonaws.com/admin
-  API:       http://a1b2c3-123456789.us-east-1.elb.amazonaws.com/api/health
+  Admin:     http://a1b2c3-123456789.us-east-1.elb.amazonaws.com/ghanshyam/admin
+  API:       http://a1b2c3-123456789.us-east-1.elb.amazonaws.com/ghanshyam-api/
 ```
 
 **8.1.2: Test Access with cURL**
 ```powershell
 # Test API health endpoint
 Write-Host "`nTesting API health..." -ForegroundColor Cyan
-curl "http://$INGRESS_ADDRESS/api/health"
+curl "http://$INGRESS_ADDRESS/ghanshyam/api"
 
 # Test Frontend
 Write-Host "`nTesting Frontend..." -ForegroundColor Cyan
-$response = Invoke-WebRequest -Uri "http://$INGRESS_ADDRESS" -UseBasicParsing
+$response = Invoke-WebRequest -Uri "http://$INGRESS_ADDRESS/ghanshyam" -UseBasicParsing
 Write-Host "Frontend Status: $($response.StatusCode)" -ForegroundColor Green
 
 # Test Admin
 Write-Host "`nTesting Admin Dashboard..." -ForegroundColor Cyan
-$response = Invoke-WebRequest -Uri "http://$INGRESS_ADDRESS/admin" -UseBasicParsing
+$response = Invoke-WebRequest -Uri "http://$INGRESS_ADDRESS/ghanshyam-admin" -UseBasicParsing
 Write-Host "Admin Status: $($response.StatusCode)" -ForegroundColor Green
 ```
 
@@ -1598,6 +1574,9 @@ Frontend Status: 200
 Testing Admin Dashboard...
 Admin Status: 200
 ```
+<img width="1782" height="509" alt="image" src="https://github.com/user-attachments/assets/7839986c-56a6-4bf5-90f3-6d1c89886dfb" />
+<img width="1919" height="944" alt="image" src="https://github.com/user-attachments/assets/66b9e07f-89b2-4ef8-8e12-f25c3e97e540" />
+
 
 **8.1.3: Open in Browser**
 ```powershell
@@ -1753,6 +1732,10 @@ Write-Host "`nAccess via:" -ForegroundColor Cyan
 Write-Host "Frontend: http://localhost:8001/api/v1/namespaces/shopnow-demo/services/frontend:80/proxy/"
 Write-Host "Backend:  http://localhost:8001/api/v1/namespaces/shopnow-demo/services/backend:5000/proxy/api/health"
 ```
+
+<img width="1880" height="128" alt="image" src="https://github.com/user-attachments/assets/28dd6a75-44b9-4cff-9cb2-bb204da260e7" />
+<img width="1914" height="961" alt="image" src="https://github.com/user-attachments/assets/c561a990-293c-4ffa-89a8-4cc6488762dc" />
+<img width="1909" height="405" alt="image" src="https://github.com/user-attachments/assets/710d3f29-222f-4c29-a232-4c3517cc23ef" />
 
 ---
 
@@ -1915,12 +1898,6 @@ if ($logs -match "Connected to MongoDB|MongoDB connected|Database connection est
 }
 ```
 
-**Expected Output:**
-```
-Testing Backend → MongoDB connection...
-✅ Backend connected to MongoDB
-```
-
 #### 9.5: Test MongoDB Data Persistence
 
 ```powershell
@@ -1955,6 +1932,7 @@ Listing MongoDB databases...
 }
 ✅ MongoDB is operational
 ```
+<img width="1918" height="709" alt="image" src="https://github.com/user-attachments/assets/4abbdca3-3ef9-4f74-927d-6f539b2f0bf2" />
 
 #### 9.6: Test Ingress Routing
 
@@ -1966,7 +1944,7 @@ $testResults = @()
 # Test root path → Frontend
 Write-Host "Testing / → Frontend..." -ForegroundColor Yellow
 try {
-    $response = Invoke-WebRequest -Uri "http://$LB_URL/" -UseBasicParsing -TimeoutSec 10
+    $response = Invoke-WebRequest -Uri "http://$LB_URL/ghanshyam" -UseBasicParsing -TimeoutSec 10
     if ($response.StatusCode -eq 200) {
         $testResults += "✅ / → Frontend (200 OK)"
     }
@@ -1977,7 +1955,7 @@ try {
 # Test /admin path → Admin
 Write-Host "Testing /admin → Admin..." -ForegroundColor Yellow
 try {
-    $response = Invoke-WebRequest -Uri "http://$LB_URL/admin" -UseBasicParsing -TimeoutSec 10
+    $response = Invoke-WebRequest -Uri "http://$LB_URL/ghanshyam-admin" -UseBasicParsing -TimeoutSec 10
     if ($response.StatusCode -eq 200) {
         $testResults += "✅ /admin → Admin (200 OK)"
     }
@@ -1988,7 +1966,7 @@ try {
 # Test /api path → Backend
 Write-Host "Testing /api → Backend..." -ForegroundColor Yellow
 try {
-    $response = Invoke-RestMethod -Uri "http://$LB_URL/api/health" -TimeoutSec 10
+    $response = Invoke-RestMethod -Uri "http://$LB_URL/ghanshyam/api" -TimeoutSec 10
     if ($response.status -eq "ok") {
         $testResults += "✅ /api → Backend (200 OK)"
     }
@@ -2098,6 +2076,7 @@ Test Results: 7 / 7 passed
 ✅ ALL TESTS PASSED!
 Your application is fully operational.
 ```
+<img width="1879" height="633" alt="image" src="https://github.com/user-attachments/assets/9f90dd5e-ef0b-4de5-b75d-5e7792a22a6b" />
 
 ### Step 10: Monitor Application
 
@@ -3198,5 +3177,6 @@ For issues and questions:
 - `<YOUR-BRANCH>`: Your Git branch name
 
 **Happy Deploying! 🚀**
+
 
 
