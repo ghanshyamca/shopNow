@@ -339,20 +339,20 @@ eksctl create cluster `
 
 If you already have an EKS cluster, skip creation and just configure kubectl:
 ```powershell
-aws eks update-kubeconfig --region us-east-1 --name your-existing-cluster-name
+aws eks update-kubeconfig --region ap-south-1 --name your-existing-cluster-name
 ```
 
 #### 2.3: Configure kubectl
 
 ```powershell
 # Connect kubectl to your new cluster
-aws eks update-kubeconfig --region us-east-1 --name shopnow-eks-cluster
+aws eks update-kubeconfig --region ap-south-1 --name shopnow-eks-cluster
 ```
 
 **Expected Output:**
-```
-Added new context arn:aws:eks:us-east-1:123456789012:cluster/shopnow-eks-cluster to C:\Users\ghans\.kube\config
-```
+<img width="1315" height="40" alt="image" src="https://github.com/user-attachments/assets/a5e8b8eb-51d8-4e97-b5e1-d590014f37a9" />
+
+
 
 **What This Does:**
 - Downloads cluster authentication config
@@ -367,10 +367,8 @@ kubectl cluster-info
 ```
 
 **Expected Output:**
-```
-Kubernetes control plane is running at https://ABC123.gr7.us-east-1.eks.amazonaws.com
-CoreDNS is running at https://ABC123.gr7.us-east-1.eks.amazonaws.com/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
-```
+<img width="1639" height="74" alt="image" src="https://github.com/user-attachments/assets/7ea40122-0002-421f-878c-c382ba5d70b9" />
+
 
 ```powershell
 # List worker nodes
@@ -378,11 +376,8 @@ kubectl get nodes
 ```
 
 **Expected Output:**
-```
-NAME                             STATUS   ROLES    AGE     VERSION
-ip-192-168-10-20.ec2.internal    Ready    <none>   5m30s   v1.28.0-eks-abcd123
-ip-192-168-20-30.ec2.internal    Ready    <none>   5m25s   v1.28.0-eks-abcd123
-```
+<img width="1033" height="103" alt="image" src="https://github.com/user-attachments/assets/0b5ac702-86fd-4554-9e5e-ddb0458f8ba7" />
+
 
 **What This Shows:**
 - 2 nodes are running (as configured)
@@ -405,7 +400,7 @@ ip-192-168-20-30.ec2.internal    Ready    <none>   5m25s   v1.28.0-eks-abcd123
 ```powershell
 # PowerShell - Get your AWS Account ID
 $AWS_ACCOUNT_ID = aws sts get-caller-identity --query Account --output text
-$AWS_REGION = "us-east-1"
+$AWS_REGION = "ap-south-1"
 
 Write-Host "AWS Account ID: $AWS_ACCOUNT_ID" -ForegroundColor Green
 Write-Host "AWS Region: $AWS_REGION" -ForegroundColor Green
@@ -416,7 +411,7 @@ Write-Host "AWS Region: $AWS_REGION" -ForegroundColor Green
 **Expected Output:**
 ```
 AWS Account ID: 123456789012
-AWS Region: us-east-1
+AWS Region: ap-south-1
 ```
 
 **Important**: Copy your Account ID - you'll need it in Step 4!
@@ -454,17 +449,8 @@ Write-Host "Admin repository created!" -ForegroundColor Green
 - `--image-scanning-configuration scanOnPush=true`: Automatically scan images for vulnerabilities
 
 **Expected Output (per repository):**
-```json
-{
-    "repository": {
-        "repositoryArn": "arn:aws:ecr:us-east-1:123456789012:repository/shopnow/backend",
-        "registryId": "123456789012",
-        "repositoryName": "shopnow/backend",
-        "repositoryUri": "123456789012.dkr.ecr.us-east-1.amazonaws.com/shopnow/backend",
-        "createdAt": "2026-03-06T10:30:00+00:00"
-    }
-}
-```
+<img width="1919" height="993" alt="image" src="https://github.com/user-attachments/assets/5a538755-07c1-4719-8b49-20ed6efda94c" />
+
 
 **Important**: Note the `repositoryUri` - this is where your Docker images will be pushed.
 
@@ -476,19 +462,8 @@ aws ecr describe-repositories --region $AWS_REGION --output table
 ```
 
 **Expected Output:**
-```
-----------------------------------------------------------------
-|                    DescribeRepositories                       |
-+---------------------------------------------------------------+
-||                        Repositories                         ||
-|+------------------------------------------------------------+|
-||  repositoryName     | repositoryUri                         ||
-|+------------------------------------------------------------+|
-||  shopnow/admin      | 123456789012.dkr.ecr.us-east-1...    ||
-||  shopnow/backend    | 123456789012.dkr.ecr.us-east-1...    ||
-||  shopnow/frontend   | 123456789012.dkr.ecr.us-east-1...    ||
-|+------------------------------------------------------------+|
-```
+<img width="1197" height="306" alt="image" src="https://github.com/user-attachments/assets/73492c84-66e5-4b93-bd43-b920f1f2a2ff" />
+
 
 **You should see 3 repositories:**
 - ✅ shopnow/backend
@@ -533,11 +508,11 @@ $ACCOUNT_ID = aws sts get-caller-identity --query Account --output text
 Write-Host "AWS Account ID: $ACCOUNT_ID"
 
 # 2. Your AWS Region (should match Step 2)
-$REGION = "us-east-1"
+$REGION = "ap-south-1"
 Write-Host "AWS Region: $REGION"
 
 # 3. Choose a unique username/identifier
-$USERNAME = "john-doe"  # Change this to your name or identifier
+$USERNAME = "ghanshyam"  # Change this to your name or identifier
 Write-Host "Username: $USERNAME"
 ```
 
@@ -564,13 +539,13 @@ Write-Host "Username: $USERNAME"
 
 4. **Replace AWS Region**:
    - Find: `<REGION>`
-   - Replace: `us-east-1` (your actual region)
+   - Replace: `ap-south-1` (your actual region)
    - Click "Replace All"
    - Confirm replacements (should see ~40-50 replacements)
 
 5. **Replace Username**:
    - Find: `<YOUR-USERNAME>`
-   - Replace: `john-doe` (your chosen identifier)
+   - Replace: `ghanshyam` (your chosen identifier)
    - Click "Replace All"
    - Confirm replacements (should see ~10-15 replacements)
 
@@ -596,8 +571,8 @@ cd c:\Users\ghans\project\herovired\shopNow
 
 # Set your values (CHANGE THESE!)
 $ACCOUNT_ID = "123456789012"  # Your AWS Account ID from Step 3
-$REGION = "us-east-1"          # Your AWS Region
-$USERNAME = "john-doe"         # Your chosen username
+$REGION = "ap-south-1"          # Your AWS Region
+$USERNAME = "ghanshyam"         # Your chosen username
 
 # Display values for confirmation
 Write-Host "`nValues to be replaced:" -ForegroundColor Yellow
@@ -653,8 +628,8 @@ if ($confirmation -eq "yes") {
 ```
 Values to be replaced:
   <ACCOUNT-ID>      → 123456789012
-  <REGION>          → us-east-1
-  <YOUR-USERNAME>   → john-doe
+  <REGION>          → ap-south-1
+  <YOUR-USERNAME>   → ghanshyam
 
 Proceed with replacement? (yes/no): yes
 
@@ -713,7 +688,7 @@ cd c:\Users\ghans\project\herovired\shopNow
 
 # Get your AWS credentials
 $AWS_ACCOUNT_ID = aws sts get-caller-identity --query Account --output text
-$AWS_REGION = "us-east-1"
+$AWS_REGION = "ap-south-1"
 
 # Login to ECR
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
@@ -748,22 +723,8 @@ Write-Host "✅ Backend image pushed successfully!" -ForegroundColor Green
 - `docker push`: Uploads image to AWS ECR
 
 **Expected Output:**
-```
-[+] Building 45.2s (10/10) FINISHED
- => [internal] load build definition from Dockerfile
- => [internal] load .dockerignore
- => [internal] load metadata for docker.io/library/node:18-alpine
- => [1/5] FROM docker.io/library/node:18-alpine
- => [2/5] WORKDIR /app
- => [3/5] COPY package*.json ./
- => [4/5] RUN npm ci --only=production
- => [5/5] COPY . .
- => exporting to image
- => => naming to docker.io/library/shopnow/backend:latest
+<img width="1609" height="787" alt="image" src="https://github.com/user-attachments/assets/fae4d29c-b37f-493f-87a2-22864e724a07" />
 
-The push refers to repository [123456789012.dkr.ecr.us-east-1.amazonaws.com/shopnow/backend]
-latest: digest: sha256:abc123... size: 1234
-```
 
 **Build Frontend Image:**
 ```powershell
@@ -3237,4 +3198,5 @@ For issues and questions:
 - `<YOUR-BRANCH>`: Your Git branch name
 
 **Happy Deploying! 🚀**
+
 
