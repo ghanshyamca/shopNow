@@ -32,21 +32,6 @@ A full-stack e-commerce platform built with MongoDB, Express.js, React, and Node
 - **Container Orchestration**: Kubernetes deployment with auto-scaling
 - **CI/CD**: Jenkins pipelines for automated build and deployment
 
-## 📋 Table of Contents
-
-- [Architecture](#architecture)
-- [Technology Stack](#technology-stack)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
-- [Development](#development)
-- [Deployment](#deployment)
-- [CI/CD Pipelines](#cicd-pipelines)
-- [Monitoring](#monitoring)
-- [Troubleshooting](#troubleshooting)
-- [Assignment Submission](#assignment-submission)
-- [Documentation](#documentation)
-
 ## 🏗️ Architecture
 
 ```
@@ -2512,267 +2497,6 @@ kubectl describe deployment backend -n shopnow-demo | grep -A 10 Environment
 kubectl exec -it deployment/backend -n shopnow-demo -- curl mongodb://mongo:27017
 ```
 
-**Issue: HPA not working**
-```bash
-# Check metrics server
-kubectl get deployment metrics-server -n kube-system
-
-# View HPA status
-kubectl describe hpa backend-hpa -n shopnow-demo
-
-# Check pod resource metrics
-kubectl top pods -n shopnow-demo
-```
-
----
-
-## 🧹 Cleanup
-
-**Remove everything:**
-```bash
-# Uninstall HELM releases
-helm uninstall admin -n shopnow-demo
-helm uninstall frontend -n shopnow-demo
-helm uninstall backend -n shopnow-demo
-helm uninstall mongo -n shopnow-demo
-
-# Delete namespace (this deletes all resources in the namespace)
-kubectl delete namespace shopnow-demo
-
-# Delete prerequisites
-kubectl delete -f kubernetes/pre-req/
-
-# Delete ECR images (optional)
-aws ecr batch-delete-image --repository-name shopnow/backend --image-ids imageTag=latest --region $AWS_REGION
-aws ecr batch-delete-image --repository-name shopnow/frontend --image-ids imageTag=latest --region $AWS_REGION
-aws ecr batch-delete-image --repository-name shopnow/admin --image-ids imageTag=latest --region $AWS_REGION
-
-# Delete EKS cluster (if you want to remove everything)
-eksctl delete cluster --name shopnow-eks-cluster --region us-east-1
-```
-
----
-
-## 🔄 Alternative Deployment Methods
-
-### 4. Deploy to Kubernetes
-
-#### Option A: Using HELM (Recommended)
-
-```bash
-# Configure kubectl for EKS
-aws eks update-kubeconfig --region <REGION> --name shopnow-eks-cluster
-
-# Create namespace
-kubectl apply -f kubernetes/k8s-manifests/namespace/namespace.yaml
-
-# Install prerequisites
-kubectl apply -f kubernetes/pre-req/storageclass-gp3.yaml
-kubectl apply -f kubernetes/pre-req/metrics-server.yaml
-
-# Deploy using HELM
-helm install mongo kubernetes/helm/charts/mongo -n shopnow-demo
-helm install backend kubernetes/helm/charts/backend -n shopnow-demo
-helm install frontend kubernetes/helm/charts/frontend -n shopnow-demo
-helm install admin kubernetes/helm/charts/admin -n shopnow-demo
-
-# Deploy Ingress
-kubectl apply -f kubernetes/k8s-manifests/ingress/ingress-shopnow.yaml
-```
-
-#### Option B: Using Raw Manifests
-
-```bash
-# Apply in order
-kubectl apply -f kubernetes/k8s-manifests/namespace/
-kubectl apply -f kubernetes/pre-req/
-kubectl apply -f kubernetes/k8s-manifests/database/
-kubectl apply -f kubernetes/k8s-manifests/backend/
-kubectl apply -f kubernetes/k8s-manifests/frontend/
-kubectl apply -f kubernetes/k8s-manifests/admin/
-kubectl apply -f kubernetes/k8s-manifests/ingress/
-```
-
-### 5. Verify Deployment
-
-```bash
-# Check all resources
-kubectl get all -n shopnow-demo
-
-# Check specific components
-kubectl get pods -n shopnow-demo
-kubectl get svc -n shopnow-demo
-kubectl get ingress -n shopnow-demo
-
-# View logs
-kubectl logs -f deployment/backend -n shopnow-demo
-kubectl logs -f deployment/frontend -n shopnow-demo
-```
-
-### 6. Access Application
-
-```bash
-# Get Ingress address
-kubectl get ingress -n shopnow-demo
-
-# Access via browser:
-# Frontend: http://shopnow.<YOUR-USERNAME>.com
-# Admin: http://shopnow.<YOUR-USERNAME>.com/admin
-# API: http://shopnow.<YOUR-USERNAME>.com/api/health
-
-# Or use port-forward for local access:
-kubectl port-forward svc/frontend 3000:80 -n shopnow-demo
-kubectl port-forward svc/admin 3001:80 -n shopnow-demo
-kubectl port-forward svc/backend 5000:5000 -n shopnow-demo
-```
-
-## 📁 Project Structure
-
-```
-shopNow/
-├── README.md                          # This file
-├── LICENSE                            # License information
-│
-├── backend/                           # Node.js API server
-│   ├── Dockerfile                     # Backend container image
-│   ├── package.json                   # Node dependencies
-│   └── server.js                      # Express application
-│
-├── frontend/                          # React customer app
-│   ├── Dockerfile                     # Multi-stage build
-│   ├── package.json                   # React dependencies
-│   ├── nginx/default.conf            # nginx configuration
-│   ├── public/
-│   └── src/
-│
-├── admin/                             # React admin dashboard
-│   ├── Dockerfile                     # Multi-stage build
-│   ├── package.json                   # React dependencies
-│   ├── nginx/default.conf            # nginx configuration
-│   ├── public/
-│   └── src/
-│
-├── kubernetes/                        # Kubernetes configurations
-│   ├── k8s-manifests/                # Raw YAML manifests (REQUIRED)
-│   │   ├── namespace/
-│   │   ├── database/                 # MongoDB StatefulSet
-│   │   ├── backend/                  # Backend deployment
-│   │   ├── frontend/                 # Frontend deployment
-│   │   ├── admin/                    # Admin deployment
-│   │   └── ingress/                  # Ingress rules
-│   │
-│   ├── helm/                          # HELM charts (REQUIRED)
-│   │   └── charts/
-│   │       ├── mongo/                # MongoDB chart
-│   │       ├── backend/              # Backend chart
-│   │       ├── frontend/             # Frontend chart
-│   │       └── admin/                # Admin chart
-│   │
-│   ├── argocd/                        # ArgoCD GitOps (OPTIONAL - Bonus)
-│   │   ├── umbrella-application.yaml
-│   │   └── apps/
-│   │
-│   └── pre-req/                       # Prerequisites
-│       ├── storageclass-gp3.yaml
-│       └── metrics-server.yaml
-│
-├── jenkins/                           # CI/CD pipelines (REQUIRED)
-│   ├── Jenkinsfile.ci.backend        # Backend build (CI)
-│   ├── Jenkinsfile.ci.frontend       # Frontend build (CI)
-│   ├── Jenkinsfile.ci.admin          # Admin build (CI)
-│   ├── Jenkinsfile.cd.backend        # Backend deploy (CD)
-│   ├── Jenkinsfile.cd.frontend       # Frontend deploy (CD)
-│   └── Jenkinsfile.cd.admin          # Admin deploy (CD)
-│
-├── scripts/                           # Automation scripts
-│   └── build-and-push.sh             # Build & push to ECR
-│
-└── docs/                              # Documentation
-    ├── START-HERE.md
-    ├── ASSIGNMENT-SUBMISSION.md
-    ├── DEPLOYMENT-GUIDE.md
-    ├── SUBMISSION-CHECKLIST.md
-    ├── QUICK-COMMANDS.md
-    ├── APPLICATION-ARCHITECTURE.md
-    ├── K8S-CONCEPTS.md
-    └── TOOLS-SETUP-GUIDE.md
-```
-
-## 🛠️ Development
-
-### Local Development
-
-#### Backend
-
-```bash
-cd backend
-npm install
-npm start
-# Runs on http://localhost:5000
-```
-
-#### Frontend
-
-```bash
-cd frontend
-npm install
-npm start
-# Runs on http://localhost:3000
-```
-
-#### Admin
-
-```bash
-cd admin
-npm install
-npm start
-# Runs on http://localhost:3001
-```
-
-### Docker Development
-
-```bash
-# Build images locally
-docker build -t shopnow/backend:dev ./backend
-docker build -t shopnow/frontend:dev ./frontend
-docker build -t shopnow/admin:dev ./admin
-
-# Run with Docker Compose (if you have docker-compose.yml)
-docker-compose up
-```
-
-## 📦 Deployment
-
-### HELM Chart Deployment
-
-```bash
-# List all releases
-helm list -n shopnow-demo
-
-# Upgrade release
-helm upgrade backend kubernetes/helm/charts/backend \
-  -n shopnow-demo \
-  --set image.tag=v2.0
-
-# Rollback
-helm rollback backend 1 -n shopnow-demo
-
-# Uninstall
-helm uninstall backend -n shopnow-demo
-```
-
-### Scaling
-
-```bash
-# Manual scaling
-kubectl scale deployment/backend --replicas=5 -n shopnow-demo
-
-# Check HPA
-kubectl get hpa -n shopnow-demo
-
-# View HPA metrics
-kubectl describe hpa backend-hpa -n shopnow-demo
-```
 
 ## 🔄 CI/CD Pipelines (Core Requirement)
 
@@ -2793,7 +2517,6 @@ kubectl describe hpa backend-hpa -n shopnow-demo
    - CI: Builds Docker image and pushes to ECR
    - CD: Deploys to Kubernetes using HELM
 
-   <img width="1916" height="956" alt="image" src="https://github.com/user-attachments/assets/66b11f57-92fe-446e-85ad-06c69c16634c" />
 ### jenkins credential update ###
 <img width="1912" height="949" alt="image" src="https://github.com/user-attachments/assets/7d10e2e7-049c-45ab-a541-402537fda8ff" />
 ### jenkins environment update ###
@@ -2806,393 +2529,58 @@ kubectl describe hpa backend-hpa -n shopnow-demo
 ## set Github Webhooks ##
 <img width="1920" height="1400" alt="image" src="https://github.com/user-attachments/assets/437a995f-6b40-49a5-be29-5a1399f72f34" />
 
-
-### GitOps with ArgoCD (Optional - Bonus Feature)
-
-**Note**: ArgoCD is NOT required for the assignment but included as a bonus advanced feature.
-
-```bash
-# Install ArgoCD (OPTIONAL)
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
-# Deploy umbrella application (OPTIONAL)
-kubectl apply -f kubernetes/argocd/umbrella-application.yaml
-
-# Access ArgoCD UI (OPTIONAL)
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-
-# Get admin password (OPTIONAL)
-kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath="{.data.password}" | base64 -d
-```
-
-## 📊 Monitoring
-
-### Check Application Health
-
-```bash
-# Pod status
-kubectl get pods -n shopnow-demo -w
-
-# Resource usage
-kubectl top nodes
-kubectl top pods -n shopnow-demo
-
-# Logs
-kubectl logs -f deployment/backend -n shopnow-demo --tail=100
-
-# Events
-kubectl get events -n shopnow-demo --sort-by='.lastTimestamp'
-```
-
-### Application Endpoints
-
-```bash
-# Health checks
-curl http://<INGRESS-IP>/api/health
-curl http://<INGRESS-IP>/health
-
-# API test
-curl http://<INGRESS-IP>/api/products
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-**Pods in CrashLoopBackOff**:
-```bash
-kubectl describe pod <pod-name> -n shopnow-demo
-kubectl logs <pod-name> -n shopnow-demo --previous
-```
-
-**Image Pull Errors**:
-```bash
-# Check ECR login
-aws ecr get-login-password --region <REGION>
-
-# Verify image exists
-aws ecr describe-images --repository-name shopnow/backend
-```
-
-**Database Connection Issues**:
-```bash
-# Check MongoDB pod
-kubectl logs -f statefulset/mongo -n shopnow-demo
-
-# Test connection
-kubectl exec -it deployment/backend -n shopnow-demo -- \
-  curl mongodb://mongo:27017
-```
-
-**Ingress Not Working**:
-```bash
-# Check Ingress controller
-kubectl get pods -n ingress-nginx
-
-# Verify Ingress resource
-kubectl describe ingress shopnow-ingress -n shopnow-demo
-```
-
-**Check Pod Status**:
-```bash
-# Describe pod
-kubectl describe pod <pod-name> -n shopnow-demo
-
-# Check events
-kubectl get events -n shopnow-demo --sort-by='.lastTimestamp'
-```
-
-## � Assignment Submission
-
-**Hero Vired DevOps Assignment - Kubernetes, HELM & Jenkins**
-
-### What to Submit:
-
-#### 1. GitHub Repository
-Push your complete project to GitHub with:
-- ✅ All Kubernetes manifests (`kubernetes/k8s-manifests/`)
-- ✅ All HELM charts (`kubernetes/helm/charts/`)
-- ✅ All Jenkins pipelines (`jenkins/Jenkinsfile.*`)
-- ✅ Dockerfiles for all components
-- ✅ Build automation scripts
-- ✅ Complete README documentation
-
-#### 2. Documentation (Required)
-Create a document (PDF/Word/Text) including:
-
-**A. Repository Link**
-```
-GitHub Repository: https://github.com/<your-username>/shopNow
-```
-
-**B. Project Summary**
-- Brief description of the MERN application
-- Architecture overview
-- Technology stack used
-
-**C. Core Deliverables Checklist**
-```
-✅ Kubernetes Deployment Files:
-   - Frontend deployment, service, configmap, HPA
-   - Backend deployment, service, configmap, secret, HPA
-   - Admin deployment, service, configmap, HPA
-   - MongoDB StatefulSet, headless service, PVC
-   - Namespace, StorageClass, Metrics Server
-   - Ingress with routing rules
-
-✅ HELM Charts:
-   - mongo/ - MongoDB chart with values.yaml
-   - backend/ - Backend chart with templates
-   - frontend/ - Frontend chart with templates
-   - admin/ - Admin chart with templates
-   - Each chart includes: deployment, service, configmap, HPA templates
-
-✅ Jenkins Groovy Pipelines:
-   - CI Pipelines (3): Build Docker images, push to ECR
-     * Jenkinsfile.ci.backend
-     * Jenkinsfile.ci.frontend
-     * Jenkinsfile.ci.admin
-   - CD Pipelines (3): Deploy to Kubernetes using HELM
-     * Jenkinsfile.cd.backend
-     * Jenkinsfile.cd.frontend
-     * Jenkinsfile.cd.admin
-```
-
-**D. Deployment Evidence**
-- Screenshots of deployed application
-- Screenshot of Kubernetes pods running (`kubectl get pods -n shopnow-demo`)
-- Screenshot of services (`kubectl get svc -n shopnow-demo`)
-- Screenshot of HELM releases (`helm list -n shopnow-demo`)
-- Screenshot of Jenkins pipeline execution
-- Screenshot of application accessed via browser
-
-**E. Challenges & Solutions**
-Document any challenges faced and how you solved them:
-- Example: "Challenge: MongoDB pod CrashLoopBackOff"
-- Example: "Solution: Fixed PVC binding by creating StorageClass"
-
-**F. Commands to Deploy**
-```bash
-# Build and push images
-./scripts/build-and-push.sh all latest
-
-# Deploy using HELM
-helm install mongo kubernetes/helm/charts/mongo -n shopnow-demo
-helm install backend kubernetes/helm/charts/backend -n shopnow-demo
-helm install frontend kubernetes/helm/charts/frontend -n shopnow-demo
-helm install admin kubernetes/helm/charts/admin -n shopnow-demo
-
-# Verify deployment
-kubectl get all -n shopnow-demo
-```
-
-### Submission Format:
-
-**Option 1: Word Document**
-```
-Assignment_DevOps_Kubernetes_<YourName>.docx
-
-Contents:
-- Repository Link
-- Project Summary (1-2 paragraphs)
-- Architecture Diagram (from README)
-- Deliverables Checklist (marked complete)
-- Screenshots (6-10 images)
-- Challenges & Solutions (bullet points)
-- Deployment Commands
-```
-
-**Option 2: PDF Document**
-```
-Assignment_DevOps_Kubernetes_<YourName>.pdf
-
-Same contents as Word document
-```
-
-**Option 3: Text File**
-```
-Assignment_DevOps_Kubernetes_<YourName>.txt
-
-GitHub Repository: <link>
-Deployment Documentation: See README.md in repository
-Screenshots: Available in docs/screenshots/ folder
-```
-
-### Submission Steps:
-
-1. **Prepare Repository**
-   ```bash
-   git add .
-   git commit -m "DevOps Assignment: Kubernetes, HELM, Jenkins - Complete"
-   git push origin main
-   ```
-
-2. **Create Screenshots Folder (Optional)**
-   ```bash
-   mkdir docs/screenshots
-   # Add your deployment screenshots here
-   ```
-
-3. **Create Submission Document**
-   - Open Word/Google Docs/Text Editor
-   - Include all required sections above
-   - Add screenshots with captions
-   - Save as PDF or DOCX
-
-4. **Submit on VLearn**
-   - Login to VLearn portal
-   - Navigate to assignment submission
-   - Upload your document
-   - Verify link is clickable and accessible
-
-### Evaluation Criteria:
-
-**Assignment will be evaluated on:**
-
-1. **Kubernetes Manifests (30%)**
-   - Correct deployment configurations
-   - Proper service definitions
-   - ConfigMaps and Secrets usage
-   - StatefulSet for MongoDB
-   - HPA and Ingress setup
-
-2. **HELM Charts (30%)**
-   - Proper chart structure
-   - Parameterized values.yaml
-   - Template usage (helpers, conditionals)
-   - Reusability and best practices
-
-3. **Jenkins Pipelines (30%)**
-   - Groovy syntax correctness
-   - CI pipeline (build, tag, push)
-   - CD pipeline (HELM deploy)
-   - Error handling
-   - Environment variables usage
-
-4. **Documentation (10%)**
-   - Clear README
-   - Deployment instructions
-   - Troubleshooting guide
-   - Process documentation
-
-### Example Repository Structure:
-
-```
-shopNow/
-├── README.md                    (Complete deployment guide)
-├── backend/
-│   ├── Dockerfile              ✅ REQUIRED
-│   └── server.js
-├── frontend/
-│   ├── Dockerfile              ✅ REQUIRED
-│   └── src/
-├── admin/
-│   ├── Dockerfile              ✅ REQUIRED
-│   └── src/
-├── kubernetes/
-│   ├── k8s-manifests/          ✅ REQUIRED (17+ YAML files)
-│   └── helm/charts/            ✅ REQUIRED (4 charts)
-├── jenkins/                     ✅ REQUIRED (6 Jenkinsfiles)
-├── scripts/
-│   └── build-and-push.sh
-└── docs/
-    ├── PROJECT-CREATION-SUMMARY.md
-    └── screenshots/            (Optional but recommended)
-```
-
-### Quick Submission Checklist:
-
-```
-□ All code pushed to GitHub
-□ Repository is public (or accessible to evaluators)
-□ README.md is complete and clear
-□ All 3 Dockerfiles present
-□ All Kubernetes manifests in k8s-manifests/
-□ All 4 HELM charts in helm/charts/
-□ All 6 Jenkins pipelines in jenkins/
-□ Screenshots captured
-□ Submission document created (PDF/Word/Text)
-□ Repository link included in document
-□ Document uploaded to VLearn
-```
-
-### Need Help?
-
-If you encounter issues:
-1. Check [Troubleshooting](#troubleshooting) section
-2. Review deployment logs: `kubectl logs <pod-name> -n shopnow-demo`
-3. Verify resource status: `kubectl get all -n shopnow-demo`
-4. Check course forums or contact instructor
-
----
-
-## �📚 Documentation
-
-Complete project documentation:
-
-- **[PROJECT-CREATION-SUMMARY.md](docs/PROJECT-CREATION-SUMMARY.md)**: Complete project summary with all deployment details, architecture, and instructions
-
-## 🤝 Contributing
-
-This is an assignment project for Hero Vired DevOps course. 
-
-For improvements or suggestions:
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/Enhancement`)
-3. Commit your changes (`git commit -m 'Add enhancement'`)
-4. Push to the branch (`git push origin feature/Enhancement`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Assignment Information
-
-**Course**: Hero Vired - DevOps Engineering
-**Module**: Kubernetes, HELM & Jenkins Automation
-**Assignment**: MERN Stack Deployment
-
-**Core Requirements**:
-- ✅ Kubernetes deployment files (manifests)
-- ✅ HELM chart for streamlined deployment
-- ✅ Jenkins Groovy code for CI/CD automation
-
-## 🙏 Acknowledgments
-
-- Hero Vired for the assignment requirements
-- Kubernetes community for excellent documentation
-- HELM project for templating capabilities
-- Jenkins community for CI/CD guidance
-- Original project: https://github.com/mohanDevOps-arch/shopNow
-
-## 📞 Support
-
-For assignment-related queries:
-- Check the [Troubleshooting](#troubleshooting) section
-- Review [docs/PROJECT-CREATION-SUMMARY.md](docs/PROJECT-CREATION-SUMMARY.md)
-- Contact course instructor via VLearn portal
-
-For issues and questions:
-- Check [docs/PROJECT-CREATION-SUMMARY.md](docs/PROJECT-CREATION-SUMMARY.md) for complete deployment instructions
-- Review pod logs: `kubectl logs -f <pod-name> -n shopnow-demo`
-- Check events: `kubectl get events -n shopnow-demo --sort-by='.lastTimestamp'`
-- Create an issue in the repository
-
----
-
-**Note**: Remember to replace all placeholders before deployment:
-- `<ACCOUNT-ID>`: Your AWS account ID
-- `<REGION>`: Your AWS region (e.g., us-east-1)
-- `<YOUR-USERNAME>`: Your unique identifier for URLs
-- `<YOUR-GIT-REPO-URL>`: Your Git repository URL
-- `<YOUR-BRANCH>`: Your Git branch name
-
-**Happy Deploying! 🚀**
-
-
-
-
-
+### Create Frontend CI Pipeline ###
+<img width="1920" height="3680" alt="image" src="https://github.com/user-attachments/assets/2dadb478-7cd7-4c4e-8850-6ee9e8db79cb" />
+
+### Create Admin CI Pipeline ###
+<img width="1920" height="3506" alt="image" src="https://github.com/user-attachments/assets/a28bd7b8-0219-43ec-91b1-52643f38113f" />
+
+### Create Backend CD Pipeline ###
+<img width="1920" height="4292" alt="image" src="https://github.com/user-attachments/assets/837ede4f-ab9f-42f2-9221-6adc59cebc14" />
+
+### Create Frontend CD Pipeline ###
+<img width="1920" height="4292" alt="image" src="https://github.com/user-attachments/assets/f4c30a6d-2d74-4e06-b650-bae1f7172cf6" />
+
+### Create Admin CD Pipeline ###
+<img width="1920" height="4292" alt="image" src="https://github.com/user-attachments/assets/994acba6-d45e-433a-b151-304eda0f0eae" />
+
+### List of CI/CD Pipeline ###
+<img width="1919" height="845" alt="image" src="https://github.com/user-attachments/assets/9a9d2f8d-6dd4-427d-9f7c-8b23ca0dfc97" />
+
+### Backend CI Pipeline Output ###
+<img width="1920" height="7716" alt="image" src="https://github.com/user-attachments/assets/c45e42ac-c914-4af3-9b7a-363f7c57d839" />
+<img width="1919" height="957" alt="image" src="https://github.com/user-attachments/assets/269ea0b2-900d-41d7-89d8-e36b587473ae" />
+<img width="1919" height="972" alt="image" src="https://github.com/user-attachments/assets/700672e8-2b52-464c-a8df-946a8f782d51" />
+
+### Backend CD Pipeline Output ###
+<img width="1920" height="9112" alt="image" src="https://github.com/user-attachments/assets/c8b06ad3-213a-4b1f-8695-4debbe8b3c7d" />
+<img width="1919" height="958" alt="image" src="https://github.com/user-attachments/assets/88f67db9-84d4-4ba4-8ecd-a482997cd417" />
+<img width="1914" height="957" alt="image" src="https://github.com/user-attachments/assets/c0e06fa8-5241-444b-b1ff-d346169a0d60" />
+
+### Admin CI Pipeline Output ###
+<img width="1920" height="8589" alt="image" src="https://github.com/user-attachments/assets/cdba8419-0b12-4a72-a1f3-6678812dae69" />
+<img width="1910" height="962" alt="image" src="https://github.com/user-attachments/assets/e063dd53-5d4d-4870-b7f0-41277e574068" />
+<img width="1894" height="854" alt="image" src="https://github.com/user-attachments/assets/4bf77b81-8bd3-4130-a266-eac70c75fde3" />
+
+### Admin CD Pipeline Output ###
+<img width="1920" height="8677" alt="image" src="https://github.com/user-attachments/assets/7093557d-db2b-44dd-99e5-d31a36df5337" />
+<img width="1897" height="864" alt="image" src="https://github.com/user-attachments/assets/b122cddf-2fe5-4474-a929-70c6fa42204f" />
+<img width="1919" height="957" alt="image" src="https://github.com/user-attachments/assets/993d3c70-26cb-4763-b31c-44a76f870619" />
+
+### Frontend CI Pipeline Output ###
+<img width="1920" height="9316" alt="image" src="https://github.com/user-attachments/assets/f0a0f2e6-8267-41ce-9610-98c03a19356b" />
+<img width="1910" height="966" alt="image" src="https://github.com/user-attachments/assets/5575b3d9-67e5-49ae-8514-b44a018753ae" />
+<img width="1915" height="962" alt="image" src="https://github.com/user-attachments/assets/649c97eb-6302-460b-83a1-76667fba904f" />
+
+### Frontend CD Pipeline Output ###
+<img width="1920" height="8618" alt="image" src="https://github.com/user-attachments/assets/8897eebc-1b86-46cd-824a-19297316407e" />
+<img width="1889" height="865" alt="image" src="https://github.com/user-attachments/assets/2b1bbac1-0e56-4fcd-9b41-b8b38cd28c10" />
+<img width="1919" height="948" alt="image" src="https://github.com/user-attachments/assets/9d360869-afe1-4e18-956d-405dbe5482a4" />
+
+### GIT Commit ###
+<img width="1794" height="1002" alt="image" src="https://github.com/user-attachments/assets/bc6308d5-7c6d-4124-a6d6-b3e34fdbd301" />
+
+### Automated Deployment Started ###
+<img width="1914" height="963" alt="image" src="https://github.com/user-attachments/assets/46271aac-94d4-44ed-b2d1-e69120e82f30" />
+<img width="1917" height="951" alt="image" src="https://github.com/user-attachments/assets/26449c4a-8de5-4d6d-8ac2-92ff43117cbe" />
+<img width="1914" height="928" alt="image" src="https://github.com/user-attachments/assets/5c0d7590-28b9-4d42-a8fa-dfc95d8593dd" />
