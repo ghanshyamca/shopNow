@@ -42,11 +42,11 @@ pipeline {
             steps {
                 echo '=== Building Docker Image ==='
                 script {
-                    sh """
-                        docker build \
-                            -t ${ECR_REPOSITORY}:${IMAGE_TAG} \
-                            -t ${ECR_REPOSITORY}:latest \
-                            -f ${DOCKERFILE_PATH} \
+                    powershell """
+                        docker build `
+                            -t ${ECR_REPOSITORY}:${IMAGE_TAG} `
+                            -t ${ECR_REPOSITORY}:latest `
+                            -f ${DOCKERFILE_PATH} `
                             ${BUILD_CONTEXT}
                     """
                 }
@@ -57,10 +57,8 @@ pipeline {
             steps {
                 echo '=== Logging into AWS ECR ==='
                 script {
-                    sh """
-                        aws ecr get-login-password --region ${AWS_REGION} | \
-                        docker login --username AWS --password-stdin \
-                        ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                    powershell """
+                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
                     """
                 }
             }
@@ -70,12 +68,9 @@ pipeline {
             steps {
                 echo '=== Tagging Docker Image ==='
                 script {
-                    sh """
-                        docker tag ${ECR_REPOSITORY}:${IMAGE_TAG} \
-                            ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
-                        
-                        docker tag ${ECR_REPOSITORY}:latest \
-                            ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                    powershell """
+                        docker tag ${ECR_REPOSITORY}:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
+                        docker tag ${ECR_REPOSITORY}:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
                     """
                 }
             }
@@ -85,7 +80,7 @@ pipeline {
             steps {
                 echo '=== Pushing to AWS ECR ==='
                 script {
-                    sh """
+                    powershell """
                         docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
                         docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
                     """
@@ -97,11 +92,11 @@ pipeline {
             steps {
                 echo '=== Cleaning up local images ==='
                 script {
-                    sh """
-                        docker rmi ${ECR_REPOSITORY}:${IMAGE_TAG} || true
-                        docker rmi ${ECR_REPOSITORY}:latest || true
-                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG} || true
-                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest || true
+                    powershell """
+                        docker rmi ${ECR_REPOSITORY}:${IMAGE_TAG} -ErrorAction SilentlyContinue
+                        docker rmi ${ECR_REPOSITORY}:latest -ErrorAction SilentlyContinue
+                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG} -ErrorAction SilentlyContinue
+                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest -ErrorAction SilentlyContinue
                     """
                 }
             }
