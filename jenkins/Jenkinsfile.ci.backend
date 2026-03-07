@@ -11,7 +11,6 @@ pipeline {
     
     environment {
         AWS_REGION = "${env.AWS_DEFAULT_REGION ?: 'ap-south-1'}"
-        AWS_ACCOUNT_ID = credentials('aws-account-id')
         ECR_REPOSITORY = 'shopnow/backend'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         DOCKERFILE_PATH = 'backend/Dockerfile'
@@ -53,37 +52,33 @@ pipeline {
             }
         }
         
-        stage('AWS ECR Login') {
+        stage('AWS ECR Login & Push') {
             steps {
-                echo '=== Logging into AWS ECR ==='
+                echo '=== Logging into AWS ECR and Pushing Images ==='
                 script {
-                    powershell """
-                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-                    """
-                }
-            }
-        }
-        
-        stage('Tag Image') {
-            steps {
-                echo '=== Tagging Docker Image ==='
-                script {
-                    powershell """
-                        docker tag ${ECR_REPOSITORY}:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
-                        docker tag ${ECR_REPOSITORY}:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
-                    """
-                }
-            }
-        }
-        
-        stage('Push to ECR') {
-            steps {
-                echo '=== Pushing to AWS ECR ==='
-                script {
-                    powershell """
-                        docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
-                        docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
-                    """
+                    withCredentials([
+                        string(credentialsId: 'aws-account-id', variable: 'ACCOUNT_ID'),
+                        [
+                            $class: 'AmazonWebServicesCredentialsBinding',
+                            credentialsId: 'aws-credentials',
+                            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                        ]
+                    ]) {
+                        powershell """
+                            # ECR Login
+                            \$PASSWORD = aws ecr get-login-password --region ${AWS_REGION}
+                            \$PASSWORD | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                            
+                            # Tag Images
+                            docker tag ${ECR_REPOSITORY}:${IMAGE_TAG} ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
+                            docker tag ${ECR_REPOSITORY}:latest ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                            
+                            # Push Images
+                            docker push ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
+                            docker push ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                        """
+                    }
                 }
             }
         }
