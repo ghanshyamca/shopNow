@@ -16,6 +16,7 @@ pipeline {
         CHART_PATH = './kubernetes/helm/charts/frontend'
         RELEASE_NAME = 'frontend'
         IMAGE_TAG = "${params.IMAGE_TAG ?: 'latest'}"
+        PATH = "C:\\Users\\ghans\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Helm.Helm_Microsoft.Winget.Source_8wekyb3d8bbwe\\windows-amd64;${env.PATH}"
     }
     
     parameters {
