@@ -65,18 +65,44 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]
                     ]) {
+                        def imageTag = env.BUILD_NUMBER
+                        def ecrRegistry = "${env.ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com"
+                        def repository = "shopnow/backend"
+                        
                         powershell """
+                            # Set AWS credentials
+                            \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
+                            \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
+                            \$env:AWS_DEFAULT_REGION = 'ap-south-1'
+                            
                             # ECR Login
-                            \$PASSWORD = aws ecr get-login-password --region ${AWS_REGION}
-                            \$PASSWORD | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                            Write-Host "Getting ECR login password..."
+                            \$PASSWORD = aws ecr get-login-password --region ap-south-1
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Error "Failed to get ECR login password"
+                                exit 1
+                            }
+                            
+                            Write-Host "Logging into ECR..."
+                            \$PASSWORD | docker login --username AWS --password-stdin ${ecrRegistry}
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Error "Docker login to ECR failed"
+                                exit 1
+                            }
+                            
+                            Write-Host "ECR Login successful"
                             
                             # Tag Images
-                            docker tag ${ECR_REPOSITORY}:${IMAGE_TAG} ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
-                            docker tag ${ECR_REPOSITORY}:latest ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                            Write-Host "Tagging images..."
+                            docker tag ${repository}:${imageTag} ${ecrRegistry}/${repository}:${imageTag}
+                            docker tag ${repository}:latest ${ecrRegistry}/${repository}:latest
                             
                             # Push Images
-                            docker push ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
-                            docker push ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                            Write-Host "Pushing images to ECR..."
+                            docker push ${ecrRegistry}/${repository}:${imageTag}
+                            docker push ${ecrRegistry}/${repository}:latest
+                            
+                            Write-Host "Successfully pushed images to ECR"
                         """
                     }
                 }
