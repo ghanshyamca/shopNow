@@ -11,7 +11,6 @@ pipeline {
     
     environment {
         AWS_REGION = "${env.AWS_DEFAULT_REGION ?: 'ap-south-1'}"
-        AWS_ACCOUNT_ID = credentials('aws-account-id')
         ECR_REPOSITORY = 'shopnow/admin'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         DOCKERFILE_PATH = 'admin/Dockerfile'
@@ -42,53 +41,77 @@ pipeline {
             steps {
                 echo '=== Building Docker Image ==='
                 script {
-                    sh """
-                        docker build \
-                            -t ${ECR_REPOSITORY}:${IMAGE_TAG} \
-                            -t ${ECR_REPOSITORY}:latest \
-                            -f ${DOCKERFILE_PATH} \
+                    powershell """
+                        docker build `
+                            -t ${ECR_REPOSITORY}:${IMAGE_TAG} `
+                            -t ${ECR_REPOSITORY}:latest `
+                            -f ${DOCKERFILE_PATH} `
                             ${BUILD_CONTEXT}
                     """
                 }
             }
         }
         
-        stage('AWS ECR Login') {
+        stage('AWS ECR Login & Push') {
             steps {
-                echo '=== Logging into AWS ECR ==='
+                echo '=== Logging into AWS ECR and Pushing Images ==='
                 script {
-                    sh """
-                        aws ecr get-login-password --region ${AWS_REGION} | \
-                        docker login --username AWS --password-stdin \
-                        ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-                    """
-                }
-            }
-        }
-        
-        stage('Tag Image') {
-            steps {
-                echo '=== Tagging Docker Image ==='
-                script {
-                    sh """
-                        docker tag ${ECR_REPOSITORY}:${IMAGE_TAG} \
-                            ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
+                    withCredentials([
+                        string(credentialsId: 'aws-account-id', variable: 'ACCOUNT_ID'),
+                        [
+                            $class: 'AmazonWebServicesCredentialsBinding',
+                            credentialsId: 'aws-credentials',
+                            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                        ]
+                    ]) {
+                        def imageTag = env.BUILD_NUMBER
+                        def ecrRegistry = "${env.ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com"
+                        def repository = "shopnow/admin"
                         
-                        docker tag ${ECR_REPOSITORY}:latest \
-                            ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
-                    """
-                }
-            }
-        }
-        
-        stage('Push to ECR') {
-            steps {
-                echo '=== Pushing to AWS ECR ==='
-                script {
-                    sh """
-                        docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
-                        docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
-                    """
+                        powershell """
+                            # Configure AWS credentials
+                            \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
+                            \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
+                            \$env:AWS_DEFAULT_REGION = 'ap-south-1'
+                            
+                            # ECR Login
+                            Write-Host "Logging into ECR registry: ${ecrRegistry}"
+                            \$ecrPassword = aws ecr get-login-password --region ap-south-1
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Error "Failed to get ECR password"
+                                exit 1
+                            }
+                            
+                            docker login -u AWS -p \$ecrPassword ${ecrRegistry}
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Error "Docker login to ECR failed"
+                                exit 1
+                            }
+                            Write-Host "ECR Login successful"
+                            
+                            # Tag Images
+                            Write-Host "Tagging images..."
+                            docker tag ${repository}:${imageTag} ${ecrRegistry}/${repository}:${imageTag}
+                            docker tag ${repository}:latest ${ecrRegistry}/${repository}:latest
+                            
+                            # Push Images
+                            Write-Host "Pushing images to ECR..."
+                            docker push ${ecrRegistry}/${repository}:${imageTag}
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Error "Failed to push image with tag ${imageTag}"
+                                exit 1
+                            }
+                            
+                            docker push ${ecrRegistry}/${repository}:latest
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Error "Failed to push image with tag latest"
+                                exit 1
+                            }
+                            
+                            Write-Host "Successfully pushed images to ECR"
+                        """
+                    }
                 }
             }
         }
@@ -97,12 +120,15 @@ pipeline {
             steps {
                 echo '=== Cleaning up local images ==='
                 script {
-                    sh """
-                        docker rmi ${ECR_REPOSITORY}:${IMAGE_TAG} || true
-                        docker rmi ${ECR_REPOSITORY}:latest || true
-                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG} || true
-                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest || true
-                    """
+                    withCredentials([string(credentialsId: 'aws-account-id', variable: 'ACCOUNT_ID')]) {
+                        powershell """
+                            try { docker rmi ${ECR_REPOSITORY}:${IMAGE_TAG} } catch {}
+                            try { docker rmi ${ECR_REPOSITORY}:latest } catch {}
+                            try { docker rmi ${env.ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG} } catch {}
+                            try { docker rmi ${env.ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest } catch {}
+                            Write-Host "Cleanup completed"
+                        """
+                    }
                 }
             }
         }
@@ -121,3 +147,4 @@ pipeline {
         }
     }
 }
+

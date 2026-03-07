@@ -35,7 +35,7 @@ pipeline {
             steps {
                 echo '=== Configuring kubectl for EKS ==='
                 script {
-                    sh """
+                    powershell """
                         aws eks update-kubeconfig \
                             --region ${AWS_REGION} \
                             --name ${CLUSTER_NAME}
@@ -48,7 +48,7 @@ pipeline {
             steps {
                 echo '=== Verifying cluster connectivity ==='
                 script {
-                    sh """
+                    powershell """
                         kubectl cluster-info
                         kubectl get nodes
                     """
@@ -90,7 +90,7 @@ pipeline {
                 script {
                     def dryRunFlag = params.DRY_RUN ? '--dry-run' : ''
                     
-                    sh """
+                    powershell """
                         helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} \
                             --namespace ${NAMESPACE} \
                             --set image.tag=${IMAGE_TAG} \
@@ -110,7 +110,7 @@ pipeline {
             steps {
                 echo '=== Verifying deployment status ==='
                 script {
-                    sh """
+                    powershell """
                         echo "Checking pods..."
                         kubectl get pods -n ${NAMESPACE} -l app.kubernetes.io/name=admin
                         
@@ -131,7 +131,7 @@ pipeline {
             steps {
                 echo '=== Displaying deployed resources ==='
                 script {
-                    sh """
+                    powershell """
                         echo "=== HELM Release Info ==="
                         helm list -n ${NAMESPACE}
                         
@@ -154,7 +154,7 @@ pipeline {
         failure {
             echo '=== Admin CD Pipeline Failed ==='
             script {
-                sh """
+                powershell """
                     echo "Recent events in namespace:"
                     kubectl get events -n ${NAMESPACE} --sort-by='.lastTimestamp' | tail -20
                 """
@@ -165,3 +165,4 @@ pipeline {
         }
     }
 }
+
