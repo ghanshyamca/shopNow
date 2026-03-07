@@ -2794,6 +2794,17 @@ kubectl describe hpa backend-hpa -n shopnow-demo
    - CD: Deploys to Kubernetes using HELM
 
    <img width="1916" height="956" alt="image" src="https://github.com/user-attachments/assets/66b11f57-92fe-446e-85ad-06c69c16634c" />
+### jenkins credential update ###
+<img width="1912" height="949" alt="image" src="https://github.com/user-attachments/assets/7d10e2e7-049c-45ab-a541-402537fda8ff" />
+### jenkins environment update ###
+<img width="1888" height="960" alt="image" src="https://github.com/user-attachments/assets/f7605096-c4c3-4ef7-99d6-196e47222a51" />
+
+### Create Backend CI Pipeline ###
+
+<img width="1920" height="3700" alt="image" src="https://github.com/user-attachments/assets/2e3842b8-c771-4328-9abb-f67d349b5c5c" />
+
+## set Github Webhooks ##
+<img width="1920" height="1400" alt="image" src="https://github.com/user-attachments/assets/437a995f-6b40-49a5-be29-5a1399f72f34" />
 
 
 ### GitOps with ArgoCD (Optional - Bonus Feature)
@@ -3180,6 +3191,7 @@ For issues and questions:
 - `<YOUR-BRANCH>`: Your Git branch name
 
 **Happy Deploying! 🚀**
+
 
 
 
