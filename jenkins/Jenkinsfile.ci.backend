@@ -114,30 +114,37 @@ pipeline {
                                 exit 1
                             }
                             
-                            # ECR Login
+                            # ECR Login - Debug token generation
                             Write-Host "ECR Registry URL: ${ecrRegistry}"
                             Write-Host "Getting ECR login password..."
                             
-                            # Save password to temp file to avoid piping issues
-                            \$tempFile = [System.IO.Path]::GetTempFileName()
-                            aws ecr get-login-password --region ap-south-1 | Out-File -FilePath \$tempFile -Encoding ASCII -NoNewline
+                            # Get password and check its validity
+                            \$ecrPassword = aws ecr get-login-password --region ap-south-1 2>&1
                             if (\$LASTEXITCODE -ne 0) {
-                                Write-Error "Failed to get ECR password"
-                                if (Test-Path \$tempFile) { Remove-Item \$tempFile -Force }
+                                Write-Error "Failed to get ECR password: \$ecrPassword"
+                                exit 1
+                            }
+                            
+                            # Debug: Check password length (token should be very long, >1000 chars)
+                            Write-Host "Password retrieved, length: \$(\$ecrPassword.Length) characters"
+                            if (\$ecrPassword.Length -lt 100) {
+                                Write-Error "ECR password seems invalid (too short). Got: \$ecrPassword"
                                 exit 1
                             }
                             
                             Write-Host "Logging into Docker registry: ${ecrRegistry}"
-                            Write-Host "Docker login command: type tempfile | docker login --username AWS --password-stdin ${ecrRegistry}"
-                            Get-Content \$tempFile | docker login --username AWS --password-stdin ${ecrRegistry}
-                            \$loginResult = \$LASTEXITCODE
-                            
-                            # Clean up temp file
-                            if (Test-Path \$tempFile) { Remove-Item \$tempFile -Force }
-                            
-                            if (\$loginResult -ne 0) {
+                            # Try direct stdin method
+                            \$ecrPassword | docker login --username AWS --password-stdin ${ecrRegistry} 2>&1
+                            if (\$LASTEXITCODE -ne 0) {
                                 Write-Error "Docker login to ECR failed"
-                                exit 1
+                                
+                                # Try alternate method: docker credential helper
+                                Write-Host "Trying alternate login method..."
+                                docker login -u AWS -p \$ecrPassword ${ecrRegistry}
+                                if (\$LASTEXITCODE -ne 0) {
+                                    Write-Error "Both Docker login methods failed"
+                                    exit 1
+                                }
                             }
                             
                             Write-Host "ECR Login successful"
