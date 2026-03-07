@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: <ACCOUNT-ID>.dkr.ecr.<REGION>.amazonaws.com/shopnow/backend
+  repository: 975050024946.dkr.ecr.ap-south-1.amazonaws.com/shopnow/backend
   tag: latest
   pullPolicy: IfNotPresent
 

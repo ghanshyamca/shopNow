@@ -10,8 +10,8 @@ pipeline {
     agent any
     
     environment {
-        AWS_REGION = '<REGION>'
-        CLUSTER_NAME = 'shopnow-eks-cluster'
+        AWS_REGION = "${env.AWS_DEFAULT_REGION ?: 'ap-south-1'}"
+        CLUSTER_NAME = "${env.EKS_CLUSTER_NAME ?: 'shopnow-eks-cluster'}"
         NAMESPACE = 'shopnow-demo'
         CHART_PATH = './kubernetes/helm/charts/frontend'
         RELEASE_NAME = 'frontend'

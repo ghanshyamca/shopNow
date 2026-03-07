@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: admin
-        image: <ACCOUNT-ID>.dkr.ecr.<REGION>.amazonaws.com/shopnow/admin:latest
+        image: 975050024946.dkr.ecr.ap-south-1.amazonaws.com/shopnow/admin:latest
         ports:
         - containerPort: 80
           name: http

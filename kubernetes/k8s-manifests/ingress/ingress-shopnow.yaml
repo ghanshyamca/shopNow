@@ -12,7 +12,7 @@ spec:
   - http:
       paths:
       # Frontend routes
-      - path: /<YOUR-USERNAME>(/|$)(.*)
+      - path: /ghanshyam(/|$)(.*)
         pathType: ImplementationSpecific
         backend:
           service:
@@ -21,7 +21,7 @@ spec:
               number: 80
       
       # Admin routes
-      - path: /<YOUR-USERNAME>-admin(/|$)(.*)
+      - path: /ghanshyam-admin(/|$)(.*)
         pathType: ImplementationSpecific
         backend:
           service:
@@ -30,7 +30,7 @@ spec:
               number: 80
       
       # Backend API routes
-      - path: /<YOUR-USERNAME>/api(/|$)(.*)
+      - path: /ghanshyam/api(/|$)(.*)
         pathType: ImplementationSpecific
         backend:
           service:

@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 
 # Configuration - REPLACE THESE
 AWS_REGION="${AWS_REGION:-us-east-1}"
-AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-<ACCOUNT-ID>}"
+AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-975050024946}"
 ECR_BASE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/shopnow"
 
 # Parse arguments
@@ -54,7 +54,7 @@ check_prerequisites() {
         exit 1
     fi
     
-    if [ "${AWS_ACCOUNT_ID}" == "<ACCOUNT-ID>" ]; then
+    if [ "${AWS_ACCOUNT_ID}" == "975050024946" ]; then
         log_error "Please configure AWS_ACCOUNT_ID in the script or environment"
         exit 1
     fi

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: <ACCOUNT-ID>.dkr.ecr.<REGION>.amazonaws.com/shopnow/backend:latest
+        image: 975050024946.dkr.ecr.ap-south-1.amazonaws.com/shopnow/backend:latest
         ports:
         - containerPort: 5000
           name: http

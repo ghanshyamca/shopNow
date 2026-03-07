@@ -10,8 +10,8 @@ pipeline {
     agent any
     
     environment {
-        AWS_REGION = '<REGION>'
-        AWS_ACCOUNT_ID = '<ACCOUNT-ID>'
+        AWS_REGION = "${env.AWS_DEFAULT_REGION ?: 'ap-south-1'}"
+        AWS_ACCOUNT_ID = credentials('aws-account-id')
         ECR_REPOSITORY = 'shopnow/admin'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         DOCKERFILE_PATH = 'admin/Dockerfile'
