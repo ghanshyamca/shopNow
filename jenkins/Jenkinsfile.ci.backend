@@ -70,8 +70,22 @@ pipeline {
                         def repository = "shopnow/backend"
                         
                         powershell """
+                            # Check Jenkins user context
+                            Write-Host "=== Jenkins Environment Check ==="
+                            Write-Host "Current User: \$env:USERNAME"
+                            Write-Host "Current User Domain: \$env:USERDOMAIN"
+                            Write-Host "Jenkins Workspace: \$env:WORKSPACE"
+                            
+                            # Check Docker access
+                            Write-Host "`n=== Docker Access Check ==="
+                            docker version
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Error "Jenkins user cannot access Docker"
+                                exit 1
+                            }
+                            
                             # Configure AWS credentials
-                            Write-Host "Configuring AWS credentials..."
+                            Write-Host "`n=== Configuring AWS Credentials ==="
                             
                             \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
                             \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
@@ -87,6 +101,9 @@ pipeline {
                                 exit 1
                             }
                             
+                            # Print first 8 chars of access key for debugging (safe to show)
+                            \$keyPrefix = \$env:AWS_ACCESS_KEY_ID.Substring(0, 8)
+                            Write-Host "Using AWS Access Key starting with: \$keyPrefix..."
                             Write-Host "AWS credentials configured"
                             
                             # Test AWS connectivity
