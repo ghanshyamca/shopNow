@@ -166,10 +166,10 @@ pipeline {
                     withCredentials([string(credentialsId: 'aws-account-id', variable: 'ACCOUNT_ID')]) {
                         powershell """
                             # Cleanup - ignore errors if images don't exist
-                            docker rmi ${ECR_REPOSITORY}:${IMAGE_TAG} 2>`$null
-                            docker rmi ${ECR_REPOSITORY}:latest 2>`$null
-                            docker rmi ${env.ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG} 2>`$null
-                            docker rmi ${env.ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest 2>`$null
+                            try { docker rmi ${ECR_REPOSITORY}:${IMAGE_TAG} } catch {}
+                            try { docker rmi ${ECR_REPOSITORY}:latest } catch {}
+                            try { docker rmi ${env.ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG} } catch {}
+                            try { docker rmi ${env.ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest } catch {}
                             Write-Host "Cleanup completed"
                         """
                     }
