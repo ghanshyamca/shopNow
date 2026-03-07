@@ -45,7 +45,7 @@ const ShopNowApp = () => {
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
+//add to cart function with quantity management
   const addToCart = (product) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item._id === product._id);
