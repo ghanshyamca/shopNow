@@ -1013,23 +1013,6 @@ kubectl logs -n shopnow-demo -l app.kubernetes.io/name=backend --tail=30
 ```
 
 **Expected Output:**
-```
-NAME: backend
-STATUS: deployed
-
-pod/backend-xxxxx condition met
-
-NAME                      READY   STATUS    RESTARTS   AGE
-backend-xxxxxxxxxx-xxxxx  1/1     Running   0          45s
-
-NAME      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
-backend   ClusterIP   10.100.123.45   <none>        5000/TCP   45s
-
---- Backend Logs ---
-Server is running on port 5000
-Connected to MongoDB successfully
-Ready to accept requests
-```
 <img width="1905" height="623" alt="image" src="https://github.com/user-attachments/assets/47a02a5f-7311-4806-9df3-883fd7751d29" />
 <img width="1874" height="77" alt="image" src="https://github.com/user-attachments/assets/cd2e0bb6-f6a4-4d2a-91be-cbabea6a4590" />
 <img width="1476" height="99" alt="image" src="https://github.com/user-attachments/assets/13493665-c7cc-4f99-9a35-b1037a309a3f" />
@@ -1082,16 +1065,7 @@ kubectl get svc -n shopnow-demo -l app.kubernetes.io/name=frontend
 ```
 
 **Expected Output:**
-```
-NAME: frontend
-STATUS: deployed
 
-NAME                       READY   STATUS    RESTARTS   AGE
-frontend-xxxxxxxxxx-xxxxx  1/1     Running   0          30s
-
-NAME       TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
-frontend   ClusterIP   10.100.234.56   <none>        80/TCP    30s
-```
 <img width="1698" height="212" alt="image" src="https://github.com/user-attachments/assets/06d5d5a1-a2e4-4aec-9b1b-38df2534ba3a" />
 <img width="1913" height="95" alt="image" src="https://github.com/user-attachments/assets/d301756e-cbd2-4837-bae7-a12bfee6a2fe" />
 <img width="1848" height="219" alt="image" src="https://github.com/user-attachments/assets/4a44d369-a533-4b9f-91a1-6edf8a80ce40" />
@@ -1117,16 +1091,7 @@ kubectl get svc -n shopnow-demo -l app.kubernetes.io/name=admin
 ```
 
 **Expected Output:**
-```
-NAME: admin
-STATUS: deployed
 
-NAME                    READY   STATUS    RESTARTS   AGE
-admin-xxxxxxxxxx-xxxxx  1/1     Running   0          30s
-
-NAME    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
-admin   ClusterIP   10.100.345.67   <none>        80/TCP    30s
-```
 <img width="1915" height="451" alt="image" src="https://github.com/user-attachments/assets/e0d47b51-2c7e-4c39-afe6-4ff3b3ee16ee" />
 
 ---
@@ -1158,20 +1123,7 @@ kubectl get svc -n ingress-nginx
 ```
 
 **Expected Output:**
-```
-namespace/ingress-nginx created
-serviceaccount/ingress-nginx created
-configmap/ingress-nginx-controller created
-...
 
-pod/ingress-nginx-controller-xxxxx condition met
-
-NAME                                 READY   STATUS    AGE
-ingress-nginx-controller-xxxxx       1/1     Running   2m
-
-NAME                                 TYPE           EXTERNAL-IP                                                              PORT(S)
-ingress-nginx-controller             LoadBalancer   a1b2c3-123456789.us-east-1.elb.amazonaws.com                            80:31234/TCP,443:31235/TCP
-```
 <img width="1918" height="1017" alt="image" src="https://github.com/user-attachments/assets/6eba51d0-fe0a-4934-886f-94d39d8262ae" />
 <img width="1903" height="436" alt="image" src="https://github.com/user-attachments/assets/8191ea98-1ba8-4144-b125-9e5951c606ce" />
 
@@ -1194,20 +1146,6 @@ kubectl describe ingress shopnow-ingress -n shopnow-demo
 ```
 
 **Expected Output:**
-```
-ingress.networking.k8s.io/shopnow-ingress created
-
-NAME              CLASS   HOSTS                   ADDRESS                                          PORTS   AGE
-shopnow-ingress   nginx   shopnow.john-doe.com    a1b2c3-123456789.us-east-1.elb.amazonaws.com    80      15s
-
-Rules:
-  Host                   Path  Backends
-  ----                   ----  --------
-  shopnow.john-doe.com
-                         /              frontend:80 (10.0.1.5:80)
-                         /admin         admin:80 (10.0.1.6:80)
-                         /api           backend:5000 (10.0.1.7:5000)
-```
 
 <img width="1774" height="686" alt="image" src="https://github.com/user-attachments/assets/f4266b50-a3f0-41b8-a8a0-b8220d7be8a4" />
 
@@ -1234,32 +1172,7 @@ kubectl get all -n shopnow-demo
 ```
 
 **Expected Output:**
-```
-NAME                           READY   STATUS    RESTARTS   AGE
-pod/admin-xxx                  1/1     Running   0          5m
-pod/backend-xxx                1/1     Running   0          8m
-pod/frontend-xxx               1/1     Running   0          5m
-pod/mongo-0                    1/1     Running   0          10m
 
-NAME              TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)     AGE
-service/admin     ClusterIP   10.100.200.50    <none>        80/TCP      5m
-service/backend   ClusterIP   10.100.100.100   <none>        5000/TCP    8m
-service/frontend  ClusterIP   10.100.150.75    <none>        80/TCP      5m
-service/mongo     ClusterIP   None             <none>        27017/TCP   10m
-
-NAME                       READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/admin      1/1     1            1           5m
-deployment.apps/backend    1/1     1            1           8m
-deployment.apps/frontend   1/1     1            1           5m
-
-NAME                                  DESIRED   CURRENT   READY   AGE
-replicaset.apps/admin-xxx             1         1         1       5m
-replicaset.apps/backend-xxx           1         1         1       8m
-replicaset.apps/frontend-xxx          1         1         1       5m
-
-NAME                     READY   AGE
-statefulset.apps/mongo   1/1     10m
-```
 <img width="1913" height="703" alt="image" src="https://github.com/user-attachments/assets/af0db0bf-440c-46e6-9400-0e6282e9cf44" />
 
 
@@ -1277,13 +1190,7 @@ kubectl get pods -n shopnow-demo -o wide
 ```
 
 **Expected Output:**
-```
-NAME           READY   STATUS    RESTARTS   AGE   IP          NODE
-admin-xxx      1/1     Running   0          5m    10.0.2.10   ip-192-168-10-20
-backend-xxx    1/1     Running   0          8m    10.0.1.15   ip-192-168-10-20
-frontend-xxx   1/1     Running   0          5m    10.0.2.20   ip-192-168-20-30
-mongo-0        1/1     Running   0          10m   10.0.1.5    ip-192-168-10-20
-```
+
 <img width="1911" height="214" alt="image" src="https://github.com/user-attachments/assets/3fd79ebd-1f60-411e-a564-fd4b31911ddf" />
 
 
@@ -1300,13 +1207,7 @@ kubectl get svc -n shopnow-demo
 ```
 
 **Expected Output:**
-```
-NAME       TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)     AGE
-admin      ClusterIP   10.100.200.50    <none>        80/TCP      5m
-backend    ClusterIP   10.100.100.100   <none>        5000/TCP    8m
-frontend   ClusterIP   10.100.150.75    <none>        80/TCP      5m
-mongo      ClusterIP   None             <none>        27017/TCP   10m
-```
+
 <img width="1555" height="180" alt="image" src="https://github.com/user-attachments/assets/8cc23052-6d0f-4bc6-b07c-0e196990a963" />
 
 **Service Types:**
@@ -1321,10 +1222,7 @@ kubectl get ingress -n shopnow-demo
 ```
 
 **Expected Output:**
-```
-NAME              CLASS   HOSTS                   ADDRESS                                          PORTS   AGE
-shopnow-ingress   nginx   shopnow.john-doe.com    a1b2c3-123.us-east-1.elb.amazonaws.com          80      3m
-```
+
 <img width="1807" height="88" alt="image" src="https://github.com/user-attachments/assets/92689df1-195d-4ce1-a4b6-6f11bd8ce60b" />
 
 **Detailed Ingress Info:**
@@ -1333,25 +1231,7 @@ kubectl describe ingress shopnow-ingress -n shopnow-demo
 ```
 
 **Expected Output:**
-```
-Name:             shopnow-ingress
-Namespace:        shopnow-demo
-Address:          a1b2c3-123.us-east-1.elb.amazonaws.com
-Default backend:  default-http-backend:80 (<error: endpoints "default-http-backend" not found>)
-Rules:
-  Host                   Path  Backends
-  ----                   ----  --------
-  shopnow.john-doe.com
-                         /              frontend:80 (10.0.2.20:80)
-                         /admin         admin:80 (10.0.2.10:80)
-                         /api           backend:5000 (10.0.1.15:5000)
-Annotations:
-  nginx.ingress.kubernetes.io/rewrite-target: /
-Events:
-  Type    Reason  Message
-  ----    ------  -------
-  Normal  Sync    Scheduled for sync
-```
+
 <img width="1866" height="465" alt="image" src="https://github.com/user-attachments/assets/09876d39-c396-4e8b-8229-daa9ed0da246" />
 
 **Important**: Copy the ADDRESS (AWS LoadBalancer URL) - you'll use this to access the app!
@@ -1364,12 +1244,7 @@ kubectl get hpa -n shopnow-demo
 ```
 
 **Expected Output:**
-```
-NAME       REFERENCE             TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-admin      Deployment/admin      15%/80%   1         3         1          5m
-backend    Deployment/backend    20%/80%   1         3         1          8m
-frontend   Deployment/frontend   10%/80%   1         3         1          5m
-```
+
 <img width="1374" height="147" alt="image" src="https://github.com/user-attachments/assets/540a01a5-7718-4879-bab8-51eb75edf805" />
 
 **What This Shows:**
@@ -1388,13 +1263,7 @@ kubectl get pv,pvc -n shopnow-demo
 ```
 
 **Expected Output:**
-```
-NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM
-persistentvolume/pvc-abc-123               5Gi        RWO            Delete           Bound    shopnow-demo/data-mongo-0
 
-NAME                                STATUS   VOLUME        CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-persistentvolumeclaim/data-mongo-0  Bound    pvc-abc-123   5Gi        RWO            gp3-ssd        10m
-```
 <img width="1909" height="296" alt="image" src="https://github.com/user-attachments/assets/82ee3260-2b1f-41b8-9d9e-ff5fb38e822e" />
 
 **What This Shows:**
@@ -1492,14 +1361,7 @@ if ($runningPods -eq $totalPods -and $totalPods -ge 4) {
 ```
 
 **Expected Output:**
-```
-=== DEPLOYMENT HEALTH SUMMARY ===
-Total Pods: 4
-Running Pods: 4
 
-✅ ALL SYSTEMS OPERATIONAL!
-Your application is ready to use.
-```
 <img width="1908" height="409" alt="image" src="https://github.com/user-attachments/assets/37b2a79b-a216-4269-8831-be6de068c9fc" />
 
 
@@ -1549,16 +1411,7 @@ Write-Host "Admin Status: $($response.StatusCode)" -ForegroundColor Green
 ```
 
 **Expected Output:**
-```
-Testing API health...
-{"status":"ok","message":"Backend is running","database":"connected"}
 
-Testing Frontend...
-Frontend Status: 200
-
-Testing Admin Dashboard...
-Admin Status: 200
-```
 <img width="1782" height="509" alt="image" src="https://github.com/user-attachments/assets/7839986c-56a6-4bf5-90f3-6d1c89886dfb" />
 <img width="1919" height="944" alt="image" src="https://github.com/user-attachments/assets/66b9e07f-89b2-4ef8-8e12-f25c3e97e540" />
 
@@ -1902,21 +1755,7 @@ if ($LASTEXITCODE -eq 0) {
 ```
 
 **Expected Output:**
-```
-=== Testing MongoDB Persistence ===
-Listing MongoDB databases...
-{
-  databases: [
-    { name: 'admin', sizeOnDisk: 40960, empty: false },
-    { name: 'config', sizeOnDisk: 12288, empty: false },
-    { name: 'local', sizeOnDisk: 73728, empty: false },
-    { name: 'shopnow', sizeOnDisk: 8192, empty: false }
-  ],
-  totalSize: 135168,
-  ok: 1
-}
-✅ MongoDB is operational
-```
+
 <img width="1918" height="709" alt="image" src="https://github.com/user-attachments/assets/4abbdca3-3ef9-4f74-927d-6f539b2f0bf2" />
 
 #### 9.6: Test Ingress Routing
@@ -2046,21 +1885,7 @@ if ($passed -eq $total) {
 ```
 
 **Expected Output:**
-```
-=== COMPREHENSIVE TEST SUMMARY ===
 
-Test Results: 7 / 7 passed
-   ✅ Backend Health
-   ✅ Frontend Accessible
-   ✅ Admin Accessible
-   ✅ Frontend-Backend Comm
-   ✅ Backend-MongoDB Conn
-   ✅ MongoDB Operational
-   ✅ Ingress Routing
-
-✅ ALL TESTS PASSED!
-Your application is fully operational.
-```
 <img width="1879" height="633" alt="image" src="https://github.com/user-attachments/assets/9f90dd5e-ef0b-4de5-b75d-5e7792a22a6b" />
 
 ### Step 10: Monitor Application
