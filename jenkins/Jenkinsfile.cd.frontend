@@ -59,10 +59,21 @@ pipeline {
             steps {
                 echo '=== Verifying cluster connectivity ==='
                 script {
-                    powershell """
-                        kubectl cluster-info
-                        kubectl get nodes
-                    """
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-credentials',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        powershell """
+                            \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
+                            \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
+                            \$env:AWS_DEFAULT_REGION = '${AWS_REGION}'
+                            
+                            kubectl cluster-info
+                            kubectl get nodes
+                        """
+                    }
                 }
             }
         }
@@ -71,15 +82,26 @@ pipeline {
             steps {
                 echo '=== Checking if namespace exists ==='
                 script {
-                    powershell """
-                        \$namespaceExists = kubectl get namespace ${NAMESPACE} 2>\$null
-                        if (-not \$namespaceExists) {
-                            Write-Host "Namespace ${NAMESPACE} not found. Creating..."
-                            kubectl create namespace ${NAMESPACE}
-                        } else {
-                            Write-Host "Namespace ${NAMESPACE} already exists"
-                        }
-                    """
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-credentials',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        powershell """
+                            \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
+                            \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
+                            \$env:AWS_DEFAULT_REGION = '${AWS_REGION}'
+                            
+                            \$namespaceExists = kubectl get namespace ${NAMESPACE} 2>\$null
+                            if (-not \$namespaceExists) {
+                                Write-Host "Namespace ${NAMESPACE} not found. Creating..."
+                                kubectl create namespace ${NAMESPACE}
+                            } else {
+                                Write-Host "Namespace ${NAMESPACE} already exists"
+                            }
+                        """
+                    }
                 }
             }
         }
@@ -99,15 +121,26 @@ pipeline {
                 script {
                     def dryRunFlag = params.DRY_RUN ? '--dry-run' : ''
                     
-                    powershell """
-                        helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} `
-                            --namespace ${NAMESPACE} `
-                            --set image.tag=${IMAGE_TAG} `
-                            --create-namespace `
-                            --wait `
-                            --timeout 5m `
-                            ${dryRunFlag}
-                    """
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-credentials',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        powershell """
+                            \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
+                            \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
+                            \$env:AWS_DEFAULT_REGION = '${AWS_REGION}'
+                            
+                            helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} `
+                                --namespace ${NAMESPACE} `
+                                --set image.tag=${IMAGE_TAG} `
+                                --create-namespace `
+                                --wait `
+                                --timeout 5m `
+                                ${dryRunFlag}
+                        """
+                    }
                 }
             }
         }
@@ -119,16 +152,27 @@ pipeline {
             steps {
                 echo '=== Verifying deployment status ==='
                 script {
-                    powershell """
-                        echo "Checking pods..."
-                        kubectl get pods -n ${NAMESPACE} -l app.kubernetes.io/name=frontend
-                        
-                        echo "\nChecking deployment..."
-                        kubectl rollout status deployment/${RELEASE_NAME} -n ${NAMESPACE} --timeout=5m
-                        
-                        echo "\nChecking service..."
-                        kubectl get svc -n ${NAMESPACE} -l app.kubernetes.io/name=frontend
-                    """
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-credentials',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        powershell """
+                            \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
+                            \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
+                            \$env:AWS_DEFAULT_REGION = '${AWS_REGION}'
+                            
+                            echo "Checking pods..."
+                            kubectl get pods -n ${NAMESPACE} -l app.kubernetes.io/name=frontend
+                            
+                            echo "\nChecking deployment..."
+                            kubectl rollout status deployment/${RELEASE_NAME} -n ${NAMESPACE} --timeout=5m
+                            
+                            echo "\nChecking service..."
+                            kubectl get svc -n ${NAMESPACE} -l app.kubernetes.io/name=frontend
+                        """
+                    }
                 }
             }
         }
@@ -140,16 +184,27 @@ pipeline {
             steps {
                 echo '=== Displaying deployed resources ==='
                 script {
-                    powershell """
-                        echo "=== HELM Release Info ==="
-                        helm list -n ${NAMESPACE}
-                        
-                        echo "\n=== Frontend Deployment ==="
-                        kubectl describe deployment/${RELEASE_NAME} -n ${NAMESPACE}
-                        
-                        echo "\n=== Frontend Pods ==="
-                        kubectl get pods -n ${NAMESPACE} -l app.kubernetes.io/name=frontend -o wide
-                    """
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-credentials',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        powershell """
+                            \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
+                            \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
+                            \$env:AWS_DEFAULT_REGION = '${AWS_REGION}'
+                            
+                            echo "=== HELM Release Info ==="
+                            helm list -n ${NAMESPACE}
+                            
+                            echo "\n=== Frontend Deployment ==="
+                            kubectl describe deployment/${RELEASE_NAME} -n ${NAMESPACE}
+                            
+                            echo "\n=== Frontend Pods ==="
+                            kubectl get pods -n ${NAMESPACE} -l app.kubernetes.io/name=frontend -o wide
+                        """
+                    }
                 }
             }
         }
@@ -163,10 +218,21 @@ pipeline {
         failure {
             echo '=== Frontend CD Pipeline Failed ==='
             script {
-                powershell """
-                    echo "Recent events in namespace:"
-                    kubectl get events -n ${NAMESPACE} --sort-by='.lastTimestamp' | Select-Object -Last 20
-                """
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    powershell """
+                        \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
+                        \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
+                        \$env:AWS_DEFAULT_REGION = '${AWS_REGION}'
+                        
+                        echo "Recent events in namespace:"
+                        kubectl get events -n ${NAMESPACE} --sort-by='.lastTimestamp' | Select-Object -Last 20
+                    """
+                }
             }
         }
         always {
