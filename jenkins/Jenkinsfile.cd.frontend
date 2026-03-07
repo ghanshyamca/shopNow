@@ -121,7 +121,10 @@ pipeline {
             steps {
                 echo '=== Linting HELM chart ==='
                 script {
-                    powershell "helm lint ${CHART_PATH}"
+                    powershell """
+                        if (\$env:HELM_HOME) { \$env:PATH = "\$env:HELM_HOME;\$env:PATH" }
+                        helm lint ${CHART_PATH}
+                    """
                 }
             }
         }
@@ -139,6 +142,7 @@ pipeline {
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                     ]]) {
                         powershell """
+                            if (\$env:HELM_HOME) { \$env:PATH = "\$env:HELM_HOME;\$env:PATH" }
                             \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
                             \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
                             \$env:AWS_DEFAULT_REGION = '${AWS_REGION}'
@@ -202,6 +206,7 @@ pipeline {
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                     ]]) {
                         powershell """
+                            if (\$env:HELM_HOME) { \$env:PATH = "\$env:HELM_HOME;\$env:PATH" }
                             \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
                             \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
                             \$env:AWS_DEFAULT_REGION = '${AWS_REGION}'
