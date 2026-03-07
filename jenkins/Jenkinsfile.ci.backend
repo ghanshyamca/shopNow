@@ -70,23 +70,39 @@ pipeline {
                         def repository = "shopnow/backend"
                         
                         powershell """
-                            # Set AWS credentials
+                            # Configure AWS credentials
+                            Write-Host "Configuring AWS credentials..."
+                            
                             \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
                             \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
                             \$env:AWS_DEFAULT_REGION = 'ap-south-1'
                             
-                            # ECR Login
-                            Write-Host "Getting ECR login password..."
-                            \$PASSWORD = aws ecr get-login-password --region ap-south-1
-                            if (\$LASTEXITCODE -ne 0) {
-                                Write-Error "Failed to get ECR login password"
+                            # Verify AWS credentials are set
+                            if (-not \$env:AWS_ACCESS_KEY_ID) {
+                                Write-Error "AWS_ACCESS_KEY_ID is not set"
+                                exit 1
+                            }
+                            if (-not \$env:AWS_SECRET_ACCESS_KEY) {
+                                Write-Error "AWS_SECRET_ACCESS_KEY is not set"
                                 exit 1
                             }
                             
-                            Write-Host "Logging into ECR..."
-                            \$PASSWORD | docker login --username AWS --password-stdin ${ecrRegistry}
+                            Write-Host "AWS credentials configured"
+                            
+                            # Test AWS connectivity
+                            Write-Host "Testing AWS connectivity..."
+                            aws sts get-caller-identity --region ap-south-1
                             if (\$LASTEXITCODE -ne 0) {
-                                Write-Error "Docker login to ECR failed"
+                                Write-Error "Failed to authenticate with AWS"
+                                exit 1
+                            }
+                            
+                            # ECR Login
+                            Write-Host "Getting ECR login password..."
+                            \$loginCommand = aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${ecrRegistry} 2>&1
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Host "Login output: \$loginCommand"
+                                Write-Error "Docker login to ECR failed with exit code \$LASTEXITCODE"
                                 exit 1
                             }
                             
@@ -100,7 +116,16 @@ pipeline {
                             # Push Images
                             Write-Host "Pushing images to ECR..."
                             docker push ${ecrRegistry}/${repository}:${imageTag}
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Error "Failed to push image with tag ${imageTag}"
+                                exit 1
+                            }
+                            
                             docker push ${ecrRegistry}/${repository}:latest
+                            if (\$LASTEXITCODE -ne 0) {
+                                Write-Error "Failed to push image with tag latest"
+                                exit 1
+                            }
                             
                             Write-Host "Successfully pushed images to ECR"
                         """
