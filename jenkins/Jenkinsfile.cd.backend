@@ -30,15 +30,13 @@ pipeline {
                 checkout scm
                 script {
                     powershell '''
-                        $helmPath = (Get-Command helm -ErrorAction SilentlyContinue).Source
-                        if ($helmPath) {
-                            $helmDir = Split-Path $helmPath -Parent
-                            $env:PATH = "$helmDir;$env:PATH"
-                            Write-Host "Found helm at: $helmPath"
-                        } else {
-                            Write-Error "helm not found in PATH. Please ensure helm is installed."
-                            exit 1
+                        if ($env:HELM_HOME) {
+                            $env:PATH = "$env:HELM_HOME;$env:PATH"
+                            Write-Host "Using helm from HELM_HOME: $env:HELM_HOME"
                         }
+                        
+                        $helmVersion = helm version --short
+                        Write-Host "Helm version: $helmVersion"
                     '''
                 }
             }
