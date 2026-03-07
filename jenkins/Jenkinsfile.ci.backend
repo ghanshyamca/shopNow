@@ -98,6 +98,7 @@ pipeline {
                             }
                             
                             # ECR Login
+                            Write-Host "ECR Registry URL: ${ecrRegistry}"
                             Write-Host "Getting ECR login password..."
                             \$ecrPassword = aws ecr get-login-password --region ap-south-1
                             if (\$LASTEXITCODE -ne 0) {
@@ -105,7 +106,8 @@ pipeline {
                                 exit 1
                             }
                             
-                            Write-Host "Logging into Docker registry..."
+                            Write-Host "Logging into Docker registry: ${ecrRegistry}"
+                            Write-Host "Docker login command: docker login --username AWS --password-stdin ${ecrRegistry}"
                             echo \$ecrPassword | docker login --username AWS --password-stdin ${ecrRegistry}
                             if (\$LASTEXITCODE -ne 0) {
                                 Write-Error "Docker login to ECR failed"
