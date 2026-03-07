@@ -117,16 +117,25 @@ pipeline {
                             # ECR Login
                             Write-Host "ECR Registry URL: ${ecrRegistry}"
                             Write-Host "Getting ECR login password..."
-                            \$ecrPassword = aws ecr get-login-password --region ap-south-1
+                            
+                            # Save password to temp file to avoid piping issues
+                            \$tempFile = [System.IO.Path]::GetTempFileName()
+                            aws ecr get-login-password --region ap-south-1 | Out-File -FilePath \$tempFile -Encoding ASCII -NoNewline
                             if (\$LASTEXITCODE -ne 0) {
                                 Write-Error "Failed to get ECR password"
+                                if (Test-Path \$tempFile) { Remove-Item \$tempFile -Force }
                                 exit 1
                             }
                             
                             Write-Host "Logging into Docker registry: ${ecrRegistry}"
-                            Write-Host "Docker login command: docker login --username AWS --password-stdin ${ecrRegistry}"
-                            echo \$ecrPassword | docker login --username AWS --password-stdin ${ecrRegistry}
-                            if (\$LASTEXITCODE -ne 0) {
+                            Write-Host "Docker login command: type tempfile | docker login --username AWS --password-stdin ${ecrRegistry}"
+                            Get-Content \$tempFile | docker login --username AWS --password-stdin ${ecrRegistry}
+                            \$loginResult = \$LASTEXITCODE
+                            
+                            # Clean up temp file
+                            if (Test-Path \$tempFile) { Remove-Item \$tempFile -Force }
+                            
+                            if (\$loginResult -ne 0) {
                                 Write-Error "Docker login to ECR failed"
                                 exit 1
                             }
