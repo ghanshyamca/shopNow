@@ -2793,6 +2793,9 @@ kubectl describe hpa backend-hpa -n shopnow-demo
    - CI: Builds Docker image and pushes to ECR
    - CD: Deploys to Kubernetes using HELM
 
+   <img width="1916" height="956" alt="image" src="https://github.com/user-attachments/assets/66b11f57-92fe-446e-85ad-06c69c16634c" />
+
+
 ### GitOps with ArgoCD (Optional - Bonus Feature)
 
 **Note**: ArgoCD is NOT required for the assignment but included as a bonus advanced feature.
@@ -3177,6 +3180,7 @@ For issues and questions:
 - `<YOUR-BRANCH>`: Your Git branch name
 
 **Happy Deploying! 🚀**
+
 
 
 
