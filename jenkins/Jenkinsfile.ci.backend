@@ -70,67 +70,24 @@ pipeline {
                         def repository = "shopnow/backend"
                         
                         powershell """
-                            # Check Jenkins user context
-                            Write-Host "=== Jenkins Environment Check ==="
-                            Write-Host "Current User: \$env:USERNAME"
-                            Write-Host "Current User Domain: \$env:USERDOMAIN"
-                            Write-Host "Jenkins Workspace: \$env:WORKSPACE"
-                            
-                            # Check Docker access
-                            Write-Host "`n=== Docker Access Check ==="
-                            docker version
-                            if (\$LASTEXITCODE -ne 0) {
-                                Write-Error "Jenkins user cannot access Docker"
-                                exit 1
-                            }
-                            
                             # Configure AWS credentials
-                            Write-Host "`n=== Configuring AWS Credentials ==="
-                            
                             \$env:AWS_ACCESS_KEY_ID = \$env:AWS_ACCESS_KEY_ID
                             \$env:AWS_SECRET_ACCESS_KEY = \$env:AWS_SECRET_ACCESS_KEY
                             \$env:AWS_DEFAULT_REGION = 'ap-south-1'
                             
-                            # Verify AWS credentials are set
-                            if (-not \$env:AWS_ACCESS_KEY_ID) {
-                                Write-Error "AWS_ACCESS_KEY_ID is not set"
-                                exit 1
-                            }
-                            if (-not \$env:AWS_SECRET_ACCESS_KEY) {
-                                Write-Error "AWS_SECRET_ACCESS_KEY is not set"
-                                exit 1
-                            }
-                            
-                            # Print first 8 chars of access key for debugging (safe to show)
-                            \$keyPrefix = \$env:AWS_ACCESS_KEY_ID.Substring(0, 8)
-                            Write-Host "Using AWS Access Key starting with: \$keyPrefix..."
-                            Write-Host "AWS credentials configured"
-                            
-                            # Test AWS connectivity
-                            Write-Host "Testing AWS connectivity..."
-                            aws sts get-caller-identity --region ap-south-1
-                            if (\$LASTEXITCODE -ne 0) {
-                                Write-Error "Failed to authenticate with AWS"
-                                exit 1
-                            }
-                            
                             # ECR Login
-                            Write-Host "ECR Registry URL: ${ecrRegistry}"
-                            Write-Host "Getting ECR login password..."
-                            
+                            Write-Host "Logging into ECR registry: ${ecrRegistry}"
                             \$ecrPassword = aws ecr get-login-password --region ap-south-1
                             if (\$LASTEXITCODE -ne 0) {
                                 Write-Error "Failed to get ECR password"
                                 exit 1
                             }
                             
-                            Write-Host "Logging into Docker registry: ${ecrRegistry}"
                             docker login -u AWS -p \$ecrPassword ${ecrRegistry}
                             if (\$LASTEXITCODE -ne 0) {
                                 Write-Error "Docker login to ECR failed"
                                 exit 1
                             }
-                            
                             Write-Host "ECR Login successful"
                             
                             # Tag Images
