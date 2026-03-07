@@ -114,37 +114,21 @@ pipeline {
                                 exit 1
                             }
                             
-                            # ECR Login - Debug token generation
+                            # ECR Login
                             Write-Host "ECR Registry URL: ${ecrRegistry}"
                             Write-Host "Getting ECR login password..."
                             
-                            # Get password and check its validity
-                            \$ecrPassword = aws ecr get-login-password --region ap-south-1 2>&1
+                            \$ecrPassword = aws ecr get-login-password --region ap-south-1
                             if (\$LASTEXITCODE -ne 0) {
-                                Write-Error "Failed to get ECR password: \$ecrPassword"
-                                exit 1
-                            }
-                            
-                            # Debug: Check password length (token should be very long, >1000 chars)
-                            Write-Host "Password retrieved, length: \$(\$ecrPassword.Length) characters"
-                            if (\$ecrPassword.Length -lt 100) {
-                                Write-Error "ECR password seems invalid (too short). Got: \$ecrPassword"
+                                Write-Error "Failed to get ECR password"
                                 exit 1
                             }
                             
                             Write-Host "Logging into Docker registry: ${ecrRegistry}"
-                            # Try direct stdin method
-                            \$ecrPassword | docker login --username AWS --password-stdin ${ecrRegistry} 2>&1
+                            docker login -u AWS -p \$ecrPassword ${ecrRegistry}
                             if (\$LASTEXITCODE -ne 0) {
                                 Write-Error "Docker login to ECR failed"
-                                
-                                # Try alternate method: docker credential helper
-                                Write-Host "Trying alternate login method..."
-                                docker login -u AWS -p \$ecrPassword ${ecrRegistry}
-                                if (\$LASTEXITCODE -ne 0) {
-                                    Write-Error "Both Docker login methods failed"
-                                    exit 1
-                                }
+                                exit 1
                             }
                             
                             Write-Host "ECR Login successful"
@@ -179,12 +163,14 @@ pipeline {
             steps {
                 echo '=== Cleaning up local images ==='
                 script {
-                    powershell """
-                        docker rmi ${ECR_REPOSITORY}:${IMAGE_TAG} -ErrorAction SilentlyContinue
-                        docker rmi ${ECR_REPOSITORY}:latest -ErrorAction SilentlyContinue
-                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG} -ErrorAction SilentlyContinue
-                        docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest -ErrorAction SilentlyContinue
-                    """
+                    withCredentials([string(credentialsId: 'aws-account-id', variable: 'ACCOUNT_ID')]) {
+                        powershell """
+                            docker rmi ${ECR_REPOSITORY}:${IMAGE_TAG} -ErrorAction SilentlyContinue
+                            docker rmi ${ECR_REPOSITORY}:latest -ErrorAction SilentlyContinue
+                            docker rmi ${env.ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG} -ErrorAction SilentlyContinue
+                            docker rmi ${env.ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest -ErrorAction SilentlyContinue
+                        """
+                    }
                 }
             }
         }
@@ -193,7 +179,8 @@ pipeline {
     post {
         success {
             echo '=== Backend CI Pipeline Completed Successfully ==='
-            echo "Image pushed: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
+            echo "Images pushed to ECR repository: ${ECR_REPOSITORY}"
+            echo "Tags: ${IMAGE_TAG}, latest"
         }
         failure {
             echo '=== Backend CI Pipeline Failed ==='
