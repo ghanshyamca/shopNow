@@ -16,7 +16,6 @@ pipeline {
         CHART_PATH = './kubernetes/helm/charts/backend'
         RELEASE_NAME = 'backend'
         IMAGE_TAG = "${params.IMAGE_TAG ?: 'latest'}"
-        PATH = "C:\\Users\\ghans\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Helm.Helm_Microsoft.Winget.Source_8wekyb3d8bbwe\\windows-amd64;${env.PATH}"
     }
     
     parameters {
@@ -29,6 +28,19 @@ pipeline {
             steps {
                 echo '=== Checking out source code ==='
                 checkout scm
+                script {
+                    powershell '''
+                        $helmPath = (Get-Command helm -ErrorAction SilentlyContinue).Source
+                        if ($helmPath) {
+                            $helmDir = Split-Path $helmPath -Parent
+                            $env:PATH = "$helmDir;$env:PATH"
+                            Write-Host "Found helm at: $helmPath"
+                        } else {
+                            Write-Error "helm not found in PATH. Please ensure helm is installed."
+                            exit 1
+                        }
+                    '''
+                }
             }
         }
         
