@@ -137,7 +137,8 @@ pipeline {
     post {
         success {
             echo '=== Admin CI Pipeline Completed Successfully ==='
-            echo "Image pushed: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
+            echo "Images pushed to ECR repository: ${ECR_REPOSITORY}"
+            echo "Tags: ${IMAGE_TAG}, latest"
         }
         failure {
             echo '=== Admin CI Pipeline Failed ==='
